@@ -1,0 +1,18 @@
+{
+  "scope": "page",
+  "surface": "OpenCode Go dashboard card/settings, full-screen Usage Monitor route, progressive PWA kiosk affordances, and the landscape two-panel carousel",
+  "designSystem": {
+    "framework": "React with Vite",
+    "components": "shadcn/Radix",
+    "tokens": "existing Tailwind and CSS variables",
+    "fonts": ["Geist Sans", "JetBrains Mono"]
+  },
+  "decisions": [
+    "Preserve existing Geist Sans and JetBrains Mono, Tailwind CSS variables, and shadcn/Radix primitives.",
+    "Usage Monitor uses a flat 28px top bar, a 22px carousel rail, and exactly two fixed landscape panels; it does not use desktop dashboard navigation or tables.",
+    "Use the user-specified solid zinc-950 canvas, existing semantic colors and fonts; no new palette, invented metric, fake device chrome, or logo treatment.",
+    "Retain the existing DonutChart through an additive compact mode; remove unused monitor sparklines rather than modifying the existing dashboard.",
+    "The target is a 740x360 CSS-pixel landscape kiosk with no normal-content scrolling; device browser proof remains a separate gate.",
+    "The PWA manifest permits orientation selection while the page attempts a progressive landscape lock; unsupported browsers receive the portrait rotation gate."
+  ]
+}

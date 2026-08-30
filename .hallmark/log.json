@@ -1,0 +1,30 @@
+[
+  {
+    "date": "2026-08-29",
+    "macrostructure": "landscape two-panel provider monitor",
+    "theme": "existing-system-dark solid zinc canvas",
+    "enrichment": "existing compact usage donuts only",
+    "brief": "Gemini CLI and Antigravity usage panels added to the existing landscape monitor carousel."
+  },
+  {
+    "date": "2026-08-29",
+    "macrostructure": "monitor console",
+    "theme": "existing-system-dark",
+    "enrichment": "subtle semantic gradient",
+    "brief": "Full-screen mobile Usage Monitor for one selected account or OpenCode Go."
+  },
+  {
+    "date": "2026-08-29",
+    "macrostructure": "monitor console with progressive install affordance",
+    "theme": "existing-system-dark",
+    "enrichment": "existing white Codex mark on zinc-950 PWA assets",
+    "brief": "Installable fullscreen mobile kiosk that launches directly into Usage Monitor."
+  },
+  {
+    "date": "2026-08-29",
+    "macrostructure": "landscape two-panel account carousel",
+    "theme": "existing-system-dark solid zinc canvas",
+    "enrichment": "compact color-coded usage donuts with a minimal account rail",
+    "brief": "Galaxy J8 landscape kiosk: swipeable accounts, two Daily/Weekly panels, no dashboard chrome or decorative device framing."
+  }
+]

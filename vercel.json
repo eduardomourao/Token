@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "bunVersion": "1.3.14",
+  "installCommand": "cd frontend && bun install --frozen-lockfile",
+  "buildCommand": "cd frontend && bun run build",
+  "outputDirectory": "app/static",
+  "rewrites": [
+    {
+      "source": "/((?!api(?:/|$)|v1(?:/|$)|backend-api(?:/|$)|health(?:/|$)).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

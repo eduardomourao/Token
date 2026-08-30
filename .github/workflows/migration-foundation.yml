@@ -1,0 +1,65 @@
+name: Migration foundation validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/migration-foundation.yml"
+      - "supabase/**"
+      - "vercel.json"
+      - "deploy/vercel/**"
+      - "tests/unit/test_migration_foundation_workflow.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-migration-foundation:
+    name: Validate credential-free migration artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Validate local migration artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path.cwd()
+          required = (
+              root / "supabase" / "config.toml",
+              root / "supabase" / "README.md",
+          )
+          missing = [str(path.relative_to(root)) for path in required if not path.is_file()]
+          if missing:
+              raise SystemExit(f"missing migration foundation artifact(s): {', '.join(missing)}")
+
+          config = (root / "supabase" / "config.toml").read_text(encoding="utf-8")
+          if re.search(r"(?m)^\\s*project_id\\s*=", config):
+              raise SystemExit("Supabase foundation must not select a remote project")
+
+          migrations = sorted((root / "supabase" / "migrations").glob("*.sql"))
+          if not migrations:
+              raise SystemExit("at least one checked-in local SQL migration is required")
+          for migration in migrations:
+              sql = migration.read_text(encoding="utf-8").strip().lower()
+              if not sql.startswith("begin;") or not sql.endswith("commit;"):
+                  raise SystemExit(f"{migration.name} must remain a single transaction")
+
+          json_paths = [root / "vercel.json"]
+          deployment_directory = root / "deploy" / "vercel"
+          if deployment_directory.is_dir():
+              json_paths.extend(deployment_directory.rglob("*.json"))
+          for path in json_paths:
+              if path.is_file():
+                  json.loads(path.read_text(encoding="utf-8"))
+
+          print("credential-free migration foundation artifacts are structurally valid")
+          PY

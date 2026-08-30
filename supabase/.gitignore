@@ -1,0 +1,5 @@
+# Supabase CLI local runtime state and developer-only configuration.
+.temp/
+.env
+.env.*
+!.env.example

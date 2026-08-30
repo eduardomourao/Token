@@ -1,0 +1,51 @@
+# Migração do dashboard para GitHub, Vercel e Supabase
+
+## Problem Statement
+
+O produto atual depende de um runtime FastAPI persistente, banco e arquivos locais. O objetivo é publicar gradualmente o painel e os monitores em uma arquitetura composta por GitHub, Vercel e Supabase, sem expor segredos, perder dados ou substituir o comportamento existente sem evidência de paridade.
+
+## Solution
+
+O GitHub se torna a fonte versionada e o ponto de CI. A Vercel atende a interface e operações curtas sob demanda. O Supabase passa a hospedar dados relacionais, autenticação, atualizações Realtime e coletores periódicos idempotentes. A versão atual permanece a referência até que cada fluxo tenha sido validado em modo paralelo e um rollback tenha sido ensaiado.
+
+O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma decisão de escopo independente. Eles não serão implicitamente removidos, simplificados ou declarados compatíveis antes de uma proposta específica.
+
+## User Stories
+
+1. Como operador, quero que o painel continue disponível sem administrar um servidor próprio.
+2. Como operador, quero que os limites de uso sejam atualizados automaticamente sem recarregar a página.
+3. Como operador, quero visualizar uma coleta recente e saber quando ela ocorreu.
+4. Como administrador, quero que cada usuário só veja os dados que lhe pertencem.
+5. Como administrador, quero manter segredos de provedores fora do navegador e do Git.
+6. Como mantenedor, quero previews verificáveis antes de qualquer publicação em produção.
+7. Como mantenedor, quero migrar dados sem sobrescrever a origem antes de conferir contagens e integridade.
+8. Como mantenedor, quero retornar ao runtime atual se um fluxo migrado divergir.
+9. Como usuário do monitor PWA, quero preservar seleção, swipe e atualização automática.
+10. Como usuário do proxy, quero que sua continuidade seja uma decisão explícita e não uma regressão silenciosa.
+
+## Implementation Decisions
+
+- O primeiro incremento é uma fundação sem credenciais e sem publicação: Git local, configuração versionável de Vercel/Supabase e CI de validação.
+- A primeira funcionalidade migrada deve ser um fluxo vertical de leitura e monitoramento, não o proxy.
+- Coletores executam por Cron em intervalos curtos, começam em um minuto, são idempotentes e gravam o resultado antes de notificar pelo Realtime.
+- Dados relacionais são propriedade do Supabase Postgres; as políticas RLS protegem cada leitura e escrita do cliente.
+- Segredos de provedores ficam somente em configurações de servidor/função. Dados criptografados exigem preservação da chave de origem e validação de descriptografia em staging.
+- O projeto de Vercel não recebe IDs, tokens, URLs sensíveis nem migrações automáticas dentro do repositório.
+- Nenhum deploy de produção, push ou mudança no Supabase é feito sem um estágio de preview e uma decisão explícita de promoção.
+
+## Testing Decisions
+
+- Testes de contrato verificam os dados que cada tela e coletor observa, não detalhes internos de framework.
+- Testes de RLS exercitam usuário autorizado, usuário não autorizado e acesso de serviço.
+- Testes de funções programadas cobrem idempotência, falha de provedor, reexecução e publicação Realtime somente após persistência.
+- Testes de paridade comparam telas, rotas e valores do runtime atual e do fluxo novo para o mesmo conjunto de dados.
+- O corte requer ensaio de exportação, importação, comparação e rollback.
+
+## Out of Scope
+
+- Substituir o proxy persistente por funções serverless sem uma especificação de compatibilidade própria.
+- Publicar credenciais, criar projetos externos, migrar dados reais, trocar domínio ou enviar commits ao GitHub nesta fundação.
+
+## Further Notes
+
+O snapshot validado em `C:\Users\Admin\Downloads\codex-lb-backups\codex-lb-main-source-snapshot-before-vercel-supabase-20260829-234606` é a referência local de restauração para esta mudança.
