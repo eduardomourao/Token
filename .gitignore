@@ -23,6 +23,7 @@ build/
 dist/
 site/
 app/static/
+.vercel-build-preview/
 deploy/helm/*/charts/
 
 # Node

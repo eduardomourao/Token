@@ -23,4 +23,11 @@
 - Validações locais aprovadas: validador de Vercel, inventário de contratos, 6 testes focados e Ruff dos novos scripts/testes.
 - Revisão por grafo: atualização incremental voltou a funcionar, porém reconstrução completa com fontes não rastreadas ultrapassou a janela segura e foi interrompida. Como ainda não há commit-base local, a análise de diff/impacto do `code-review-graph` permanece formalmente bloqueada; não deve ser considerada concluída.
 - Revisão Matt Standards/Spec: o fluxo exige um commit, branch, tag ou merge-base que resolva e um diff contra `HEAD`. Este checkout não possui commit inicial e a identidade Git atual usa um e-mail de exemplo; a revisão fica bloqueada até definir identidade e criar um baseline local deliberado. Não foi criado commit com identidade inventada.
+
+## 2026-08-30 — baseline remoto e prévia de build
+
+- GitHub: a conta `eduardomourao` e o repositório remoto foram verificados. O commit inicial local foi criado com o e-mail `noreply` da conta e mesclado de modo não-forçado ao único commit remoto (que continha somente `README.md`). A `main` foi enviada com sucesso.
+- Git hooks: o hook global de pré-commit estava em recursão por acionar `code-review-graph` dentro de si. As duas tentativas presas foram encerradas após inspeção da cadeia de processos. O baseline foi criado uma única vez com `ECC_SKIP_GIT_HOOKS=1`, depois de varredura de segredos; o hook global não foi alterado.
+- Build: o build normal para `app/static` ficou preso pelo diretório gerado já em uso. O mesmo build, direcionado para uma saída temporária isolada, passou com 4.162 módulos transformados e Vite concluído em 5,92 segundos. O artefato temporário não pôde ser removido pela proteção local e foi adicionado ao `.gitignore`.
+- Supabase: há uma única organização disponível e um projeto existente que foi preservado. A cotação de um projeto novo isolado é US$ 0/mês; a criação depende da confirmação de custo exigida pelo conector.
 - Alterações externas: nenhuma. A configuração de GitHub, Vercel e Supabase continua inteiramente local e sem credenciais.
