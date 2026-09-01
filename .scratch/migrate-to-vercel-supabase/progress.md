@@ -44,3 +44,12 @@
 - O adaptador frontend Gemini/Supabase foi adicionado em modo opt-in. Sem `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`, o caminho FastAPI existente permanece o único ativo. A troca de rota requer o próximo ticket: gate Supabase Auth e configuração dos valores públicos na Vercel.
 - Erro de inspeção: uma busca incluiu `frontend/src/App.test.tsx`, arquivo inexistente. A busca foi corrigida para os testes reais do monitor; nenhum arquivo foi afetado.
 - Três tarefas paralelas somente de análise foram criadas para Vercel, Supabase e contrato de Usage Monitor. Nenhuma recebeu permissão para editar arquivos ou recursos externos.
+
+## 2026-09-01 — primeiro coletor Gemini hospedado
+
+- A Edge Function `collect-gemini-usage` foi publicada no projeto Supabase isolado. Ela aceita apenas `POST` autenticado por segredo próprio, busca um único monitor proprietário e grava snapshots sem expor tokens ao navegador ou ao Git.
+- O proprietário autenticado e o monitor Gemini foram criados a partir da sessão local existente. O refresh token e os dados OAuth foram instalados exclusivamente como segredos da Edge Function; nenhum valor foi escrito nos arquivos, saída de comando ou repositório.
+- Uma migration adicional tornou a aquisição/finalização da coleção idempotente e transacional em SQL, com RPCs permitidas somente a `service_role`. A migration foi aplicada ao projeto remoto.
+- Validações concluídas: 2 testes Deno do parser e `deno check` da função; 5 testes Python de contratos SQL; advisor remoto executado.
+- Bloqueio factual de coleta: OAuth renova com êxito, mas a chamada interna `retrieveUserQuota` do Gemini retorna HTTP 403 no ambiente hospedado. O coletor registra falha sanitizada e não inventa snapshots. A promoção para produção permanece suspensa até resolver esse acesso upstream.
+- Advisor remoto: somente o aviso de configuração `auth_leaked_password_protection` desativada. Não há alteração automatizável disponível pelo CLI neste checkout; habilitar no painel Supabase é recomendação pendente de hardening de autenticação.
