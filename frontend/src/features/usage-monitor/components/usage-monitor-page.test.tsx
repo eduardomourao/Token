@@ -153,4 +153,21 @@ describe("UsageMonitorPage", () => {
     expect(await screen.findByRole("option", { name: "Google AI Pro" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Antigravity" })).toBeInTheDocument();
   });
+
+  it("explains a hosted Gemini provider outage without removing the selected source", async () => {
+    getGeminiUsageMonitorMock.mockResolvedValue({
+      configured: true,
+      lastAttemptAt: "2026-09-01T15:00:00Z",
+      lastSuccessAt: null,
+      lastError: "upstream_unavailable",
+      windows: [],
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<UsageMonitorPage />);
+
+    await user.click(await screen.findByRole("combobox", { name: "Select account" }));
+    await user.click(await screen.findByRole("option", { name: "Google AI Pro" }));
+
+    expect(await screen.findByText("Atualização automática indisponível neste provedor.")).toBeInTheDocument();
+  });
 });

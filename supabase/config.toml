@@ -19,6 +19,27 @@ major_version = 17
 enabled = false
 sql_paths = []
 
+[auth]
+# Production uses the stable Vercel alias; the wildcard permits preview-based
+# magic-link validation without widening redirects beyond this Vercel team.
+site_url = "https://token-usage-monitor.vercel.app"
+additional_redirect_urls = [
+  "https://token-usage-monitor.vercel.app/**",
+  "https://*-stiflerwfl1-oss-projects.vercel.app/**",
+]
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[auth.email]
+enable_confirmations = true
+max_frequency = "1m0s"
+otp_length = 8
+
+[storage.vector]
+enabled = false
+
 [functions.collect-gemini-usage]
 enabled = true
 verify_jwt = false
@@ -29,3 +50,9 @@ entrypoint = "./functions/collect-gemini-usage/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/collect-gemini-usage/*.html" ]
+
+[functions.collect-opencode-go-usage]
+enabled = true
+verify_jwt = false
+import_map = "./functions/collect-opencode-go-usage/deno.json"
+entrypoint = "./functions/collect-opencode-go-usage/index.ts"

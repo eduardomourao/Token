@@ -89,7 +89,7 @@ export async function fetchGeminiUsage(credentials: GeminiCredentials): Promise<
   const loaded = await postCodeAssist("loadCodeAssist", accessToken, {
     metadata: { ideType: "GEMINI_CLI", platform: "LINUX_AMD64", pluginType: "GEMINI" },
   });
-  const project = projectId(loaded);
+  const project = providerProjectId(loaded);
   const quota = await postCodeAssist("retrieveUserQuota", accessToken, { project });
   return parseQuotaBuckets(quota);
 }
@@ -104,11 +104,11 @@ async function postCodeAssist(method: string, accessToken: string, payload: Reco
   return jsonRecord(response, "invalid_payload");
 }
 
-function projectId(payload: Record<string, unknown>): string {
+export function providerProjectId(payload: Record<string, unknown>): string {
   const project = payload.cloudaicompanionProject;
   const value = isRecord(project) ? project.id ?? project.name : project;
   if (typeof value !== "string" || !value.trim()) {
-    throw new CollectorError("invalid_payload", "Gemini returned no Cloud project");
+    throw new CollectorError("upstream_unavailable", "Gemini usage provider has no available Cloud project");
   }
   return value.trim();
 }

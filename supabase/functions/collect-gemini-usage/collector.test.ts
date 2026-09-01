@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@^1";
 
-import { parseQuotaBuckets } from "./collector.ts";
+import { parseQuotaBuckets, providerProjectId } from "./collector.ts";
 
 Deno.test("parseQuotaBuckets prefers request quota and emits supported latest tracks", () => {
   const buckets = parseQuotaBuckets({
@@ -48,4 +48,9 @@ Deno.test("parseQuotaBuckets rejects a malformed or unsupported quota response",
     Error,
     "invalid quota bucket",
   );
+});
+
+Deno.test("providerProjectId classifies a retired or unprovisioned Code Assist account as upstream unavailable", () => {
+  const error = assertThrows(() => providerProjectId({ allowedTiers: [], ineligibleTiers: [] }), Error);
+  assertEquals((error as { code?: string }).code, "upstream_unavailable");
 });

@@ -68,7 +68,6 @@ export function UsageMonitorPage() {
     queryFn: getOpenCodeGoUsageMonitor,
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
-    enabled: !supabaseUsageMonitorEnabled,
   });
   const geminiQuery = useQuery({ queryKey: ["gemini-usage", "monitor", "usage-monitor"], queryFn: getGeminiUsageMonitor, refetchInterval: POLL_INTERVAL_MS, refetchIntervalInBackground: true });
   const antigravityQuery = useQuery({ queryKey: ["antigravity-usage", "monitor", "usage-monitor"], queryFn: getAntigravityUsageMonitor, refetchInterval: POLL_INTERVAL_MS, refetchIntervalInBackground: true, enabled: !supabaseUsageMonitorEnabled });

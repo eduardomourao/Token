@@ -53,3 +53,12 @@
 - Validações concluídas: 2 testes Deno do parser e `deno check` da função; 5 testes Python de contratos SQL; advisor remoto executado.
 - Bloqueio factual de coleta: OAuth renova com êxito, mas a chamada interna `retrieveUserQuota` do Gemini retorna HTTP 403 no ambiente hospedado. O coletor registra falha sanitizada e não inventa snapshots. A promoção para produção permanece suspensa até resolver esse acesso upstream.
 - Advisor remoto: somente o aviso de configuração `auth_leaked_password_protection` desativada. Não há alteração automatizável disponível pelo CLI neste checkout; habilitar no painel Supabase é recomendação pendente de hardening de autenticação.
+
+## 2026-09-01 — coleta hospedada OpenCode Go e hardening da transação
+
+- A coleta do Usage Monitor foi estendida ao provedor OpenCode Go. A Edge Function `collect-opencode-go-usage` lê a API do provedor apenas com segredo de função, usa a mesma trava transacional de coleta e grava as três janelas de uso no Supabase.
+- As migrations `20260901170000` a `20260901190000` foram aplicadas ao projeto isolado. Elas agendam os dois coletores a cada cinco minutos, corrigem a chamada interna para `net.http_post`, isolam o provedor na claim e evitam trabalho upstream duplicado.
+- As funções `collect-gemini-usage` e `collect-opencode-go-usage` foram publicadas novamente após a correção. Os jobs recorrentes registraram execuções bem-sucedidas às 15:40, 15:45 e 15:50 UTC; OpenCode Go possuía 15 snapshots e nenhum erro na última verificação.
+- O Gemini Code Assist para indivíduos foi descontinuado pelo fornecedor no ambiente local. A função mantém a fonte visível, mas classifica a ausência do projeto provider como `upstream_unavailable`; ela não apresenta quota fictícia nem dados antigos como atuais.
+- Supabase Auth agora possui URL estável da Vercel e redirects de preview restritos ao time. Uma tentativa revelou que `[vector]` é uma chave inválida para a CLI atual e poderia solicitar Vector Buckets pagos; ela foi corrigida para `[storage.vector]` com `enabled = false`, e a sincronização final confirmou Auth e Storage sem mudanças pendentes.
+- Validação final desta rodada: 5 testes Deno, 8 testes de migration, 10 testes Vitest focados, typecheck e build Vite de produção concluídos. O build de produção gerou o bundle do Usage Monitor em 14,88 kB sem gzip.

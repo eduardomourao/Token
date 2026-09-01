@@ -3,11 +3,14 @@ import {
   OpenCodeGoUsageCredentialRequestSchema,
   OpenCodeGoUsageMonitorSchema,
 } from "@/features/opencode-go-usage/schemas";
+import { getSupabaseOpenCodeGoUsageMonitor, isSupabaseUsageMonitorEnabled } from "@/features/gemini-usage/supabase-usage-monitor";
 
 const OPENCODE_GO_USAGE_PATH = "/api/opencode-go-usage";
 
 export function getOpenCodeGoUsageMonitor() {
-  return get(`${OPENCODE_GO_USAGE_PATH}/`, OpenCodeGoUsageMonitorSchema);
+  return isSupabaseUsageMonitorEnabled()
+    ? getSupabaseOpenCodeGoUsageMonitor()
+    : get(`${OPENCODE_GO_USAGE_PATH}/`, OpenCodeGoUsageMonitorSchema);
 }
 
 export function configureOpenCodeGoUsage(apiKey: string) {

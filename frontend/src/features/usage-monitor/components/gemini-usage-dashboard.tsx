@@ -15,6 +15,7 @@ export function GeminiUsageDashboard({ monitor }: { monitor: GeminiUsageMonitor 
       const item = monitor.windows.find((candidate) => candidate.window === key);
       return item ? <UsageDonutCard key={key} title={item.label} remaining={item.remainingPercent} total={100} resetAt={item.resetsAt} resetLabel={t("usageMonitor.resetsIn")} usedLabel={t("usageMonitor.used")} remainingLabel={t("usageMonitor.remaining")} usedPercent={item.usedPercent} /> : <Unavailable key={key} label={key === "pro_latest" ? t("usageMonitor.geminiPro") : t("usageMonitor.geminiFlash")} />;
     })}
+    {monitor.lastError ? <p className="col-span-2 self-end text-center text-[10px] text-muted-foreground">Atualização automática indisponível neste provedor.</p> : null}
   </div>;
 }
 

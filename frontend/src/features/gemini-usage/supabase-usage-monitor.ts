@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { GeminiUsageMonitor } from "./schemas";
+import type { OpenCodeGoUsageMonitor } from "@/features/opencode-go-usage/schemas";
 
 type SupabaseUsageMonitor = {
   id: string;
@@ -79,16 +80,60 @@ export function mapSupabaseGeminiUsageMonitor(
   };
 }
 
+export function mapSupabaseOpenCodeGoUsageMonitor(
+  monitor: SupabaseUsageMonitor | null,
+  snapshots: SupabaseUsageSnapshot[],
+): OpenCodeGoUsageMonitor {
+  if (!monitor) {
+    return { configured: false, lastAttemptAt: null, lastSuccessAt: null, lastError: null, windows: [] };
+  }
+
+  const newestSnapshots = new Map<string, SupabaseUsageSnapshot>();
+  for (const snapshot of snapshots) {
+    const current = newestSnapshots.get(snapshot.window_key);
+    if (!current || current.captured_at < snapshot.captured_at) newestSnapshots.set(snapshot.window_key, snapshot);
+  }
+
+  const windows = ["rolling", "weekly", "monthly"].flatMap((window) => {
+    const snapshot = newestSnapshots.get(window);
+    return snapshot ? [{
+      window: window as "rolling" | "weekly" | "monthly",
+      remainingPercent: Number(snapshot.remaining_percent),
+      usedPercent: Number(snapshot.used_percent),
+      resetsAt: snapshot.resets_at,
+      capturedAt: snapshot.captured_at,
+    }] : [];
+  });
+
+  return {
+    configured: true,
+    lastAttemptAt: monitor.last_attempt_at,
+    lastSuccessAt: monitor.last_success_at,
+    lastError: monitor.last_error_code,
+    windows,
+  };
+}
+
 export async function getSupabaseGeminiUsageMonitor(): Promise<GeminiUsageMonitor> {
+  const { monitor, snapshots } = await getSupabaseUsageMonitor("gemini_cli");
+  return mapSupabaseGeminiUsageMonitor(monitor, snapshots);
+}
+
+export async function getSupabaseOpenCodeGoUsageMonitor(): Promise<OpenCodeGoUsageMonitor> {
+  const { monitor, snapshots } = await getSupabaseUsageMonitor("opencode_go");
+  return mapSupabaseOpenCodeGoUsageMonitor(monitor, snapshots);
+}
+
+async function getSupabaseUsageMonitor(provider: "gemini_cli" | "opencode_go") {
   const supabase = getSupabaseUsageMonitorClient();
   const monitorResult = await supabase
     .from("usage_monitors")
     .select("id,last_attempt_at,last_success_at,last_error_code")
-    .eq("provider", "gemini_cli")
+    .eq("provider", provider)
     .maybeSingle();
 
   if (monitorResult.error) throw monitorResult.error;
-  if (!monitorResult.data) return mapSupabaseGeminiUsageMonitor(null, []);
+  if (!monitorResult.data) return { monitor: null, snapshots: [] };
 
   const snapshotsResult = await supabase
     .from("usage_snapshots")
@@ -98,5 +143,5 @@ export async function getSupabaseGeminiUsageMonitor(): Promise<GeminiUsageMonito
     .limit(64);
 
   if (snapshotsResult.error) throw snapshotsResult.error;
-  return mapSupabaseGeminiUsageMonitor(monitorResult.data, snapshotsResult.data ?? []);
+  return { monitor: monitorResult.data, snapshots: snapshotsResult.data ?? [] };
 }

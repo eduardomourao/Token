@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { CollectorError, fetchGeminiUsage } from "./collector.ts";
+import { CollectorError, fetchOpenCodeUsage } from "./collector.ts";
 
 const json = (status: number, payload: Record<string, unknown>) => Response.json(payload, { status });
 
@@ -15,19 +15,15 @@ export default {
     const supabaseUrl = requiredEnv("SUPABASE_URL");
     const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
     const ownerId = requiredEnv("USAGE_MONITOR_OWNER_ID");
-    const clientId = requiredEnv("GEMINI_OAUTH_CLIENT_ID");
-    const clientSecret = requiredEnv("GEMINI_OAUTH_CLIENT_SECRET");
-    const refreshToken = requiredEnv("GEMINI_REFRESH_TOKEN");
-    if (!supabaseUrl || !serviceRoleKey || !ownerId || !clientId || !clientSecret || !refreshToken) {
-      return json(503, { error: "collector_not_configured" });
-    }
+    const apiKey = requiredEnv("OPENCODE_GO_API_KEY");
+    if (!supabaseUrl || !serviceRoleKey || !ownerId || !apiKey) return json(503, { error: "collector_not_configured" });
 
     const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: monitor, error: monitorError } = await admin
       .from("usage_monitors")
       .select("id, owner_id")
       .eq("owner_id", ownerId)
-      .eq("provider", "gemini_cli")
+      .eq("provider", "opencode_go")
       .eq("enabled", true)
       .maybeSingle();
     if (monitorError) return json(500, { error: "monitor_query_failed" });
@@ -39,7 +35,7 @@ export default {
     const { data: claimed, error: claimError } = await admin.rpc("claim_usage_collection", {
       p_monitor_id: monitor.id,
       p_owner_id: ownerId,
-      p_provider: "gemini_cli",
+      p_provider: "opencode_go",
       p_collection_slot: collectionSlot,
     });
     const collection = claimed?.[0];
@@ -47,14 +43,14 @@ export default {
     if (!collection.is_claimed) return json(200, { status: collection.collection_status === "succeeded" ? "already_collected" : "collection_in_progress" });
 
     try {
-      const windows = await fetchGeminiUsage({ clientId, clientSecret, refreshToken });
+      const windows = await fetchOpenCodeUsage(apiKey);
       const { error: snapshotError } = await admin.from("usage_snapshots").upsert(
         windows.map((window) => ({
           collection_id: collection.collection_id,
           monitor_id: monitor.id,
           owner_id: ownerId,
           window_key: window.windowKey,
-          label: window.label,
+          label: window.windowKey,
           remaining_percent: window.remainingPercent,
           resets_at: window.resetsAt,
           captured_at: attemptedAt,
