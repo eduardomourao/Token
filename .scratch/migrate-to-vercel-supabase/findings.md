@@ -45,3 +45,12 @@
 | Deploy irreversível | Preview Vercel, ambiente Supabase separado e rollback documentado antes da promoção. |
 | Limite gratuito interrompe a operação | Monitorar consumo, pausas e limites; não prometer disponibilidade idêntica à de um processo persistente. |
 
+## Provisionamento confirmado em 2026-09-01
+
+- Repositório oficial: `https://github.com/eduardomourao/Token`, branch `main`, sincronizado até `5c0f1ef` antes das alterações locais de ignore da Vercel.
+- Supabase isolado: `mtokqhqdkkxbyvgjwyvu`, organização `tokens`, região `sa-east-1`. Está vazio além de `app.migration_metadata`; a migração remota e local estão alinhadas e o advisor remoto não apontou problemas.
+- Projeto Supabase existente `lzsaaufsdcmqlasjrqck` é um CRM com dados reais e fica fora de todo comando, migração e validação desta tarefa.
+- Projeto Vercel: `token-usage-monitor`, vinculado ao time `stiflerwfl1-oss-projects`. Um deploy local inicial foi interrompido antes do término quando a CLI estimou upload de 557 MB, causado por superfícies locais não excluídas.
+- O `.vercelignore` local exclui ambientes, dependências, artefatos, testes, documentação, `deploy/` e a árvore Git. A próxima validação deve provar que o upload ficou pequeno antes de declarar preview disponível.
+- A primeira estimativa de 520 MB foi reproduzida: `.code-review-graph/graph.db` local respondia por aproximadamente 514 MiB. A pasta foi adicionada ao `.vercelignore`; sem ela, a árvore elegível é aproximadamente 12 MiB.
+- Deploy Vercel confirmado: `dpl_91JRoMc9uAfcL7scFqj4m5roNbMC`, estado `READY`, URL `https://token-usage-monitor.vercel.app`. O build remoto instalou dependências e concluiu `tsc -b && vite build`. A Vercel classificou-o como produção automaticamente porque era o primeiro deploy do projeto.

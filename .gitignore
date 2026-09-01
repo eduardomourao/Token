@@ -24,6 +24,7 @@ dist/
 site/
 app/static/
 .vercel-build-preview/
+.vercel/
 deploy/helm/*/charts/
 
 # Node
@@ -62,3 +63,6 @@ SUMMARY.md
 DECISIONS.md
 .superpowers/
 .agents/worktrees/
+
+.vercel
+.env*

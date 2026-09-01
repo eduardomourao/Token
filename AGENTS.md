@@ -15,6 +15,20 @@ The `/project-conventions` skill is auto-activated on code edits (PreToolUse gua
 | Code Conventions (Full) | `/project-conventions` skill | On code edit (auto-enforced) |
 | Git Workflow | `.agents/conventions/git-workflow.md` | Commit / PR |
 
+## Agent skills
+
+### Issue tracker
+
+Migration and implementation tickets use local Markdown under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Local ticket status uses the default triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. Use `CONTEXT.md` and relevant OpenSpec context before changing a domain contract. See `docs/agents/domain.md`.
+
 ## Workflow (OpenSpec-first)
 
 This repo uses **OpenSpec as the primary workflow and SSOT** for change-driven development.

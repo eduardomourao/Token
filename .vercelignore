@@ -1,0 +1,35 @@
+# Local environments, dependency installs, and generated build output
+.venv/
+.env*
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/src/**/*.test.*
+frontend/src/__integration__/
+frontend/browser-smoke/
+frontend/screenshots/
+app/static/
+.vercel-build-preview/
+
+# Local tooling, caches, and development-only artifacts
+.git/
+.vercel/
+.agents/
+.claude-flow/
+.code-review-graph/
+.scratch/
+.hallmark/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+__pycache__/
+.vite/
+coverage/
+
+# The Vercel preview is a static Vite application; these runtime surfaces stay
+# in the legacy rollback path until their serverless replacements are proven.
+tests/
+deploy/
+docs/
+openspec/

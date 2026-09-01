@@ -9,7 +9,7 @@
 ## 2. Foundation vertical slice
 
 - [ ] 2.1 Bootstrap a versioned GitHub repository from the verified source without replacing the existing remote contents blindly.
-- [ ] 2.2 Add an isolated Supabase development schema and RLS policy set with migration and rollback tests.
+- [~] 2.2 Add an isolated Supabase development schema and RLS policy set with migration and rollback tests. (Gemini first slice: SQL contract test RED.)
 - [ ] 2.3 Add a Vercel preview application that serves one authenticated, read-only dashboard slice.
 - [ ] 2.4 Compare the slice with the current runtime using contract and browser acceptance tests.
 
@@ -25,4 +25,3 @@
 - [ ] 4.1 Run migration rehearsal and rollback rehearsal from the validated snapshot.
 - [ ] 4.2 Promote only after data, security, behavior and cost gates pass.
 - [ ] 4.3 Observe the promoted application and retain the legacy rollback path through the agreed stability window.
-

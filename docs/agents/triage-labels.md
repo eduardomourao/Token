@@ -1,9 +1,11 @@
-# Triage Labels
+# Triage labels
 
-| Canonical role | Local label |
-|---|---|
-| needs-triage | needs-triage |
-| needs-info | needs-info |
-| ready-for-agent | ready-for-agent |
-| ready-for-human | ready-for-human |
-| wontfix | wontfix |
+The local Markdown tracker uses the default vocabulary:
+
+- `needs-triage`
+- `needs-info`
+- `ready-for-agent`
+- `ready-for-human`
+- `wontfix`
+
+Use these values in a ticket's `Status:` line when triage applies. Do not create or mutate GitHub labels as part of local tracker maintenance.

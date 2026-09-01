@@ -31,3 +31,16 @@
 - Build: o build normal para `app/static` ficou preso pelo diretório gerado já em uso. O mesmo build, direcionado para uma saída temporária isolada, passou com 4.162 módulos transformados e Vite concluído em 5,92 segundos. O artefato temporário não pôde ser removido pela proteção local e foi adicionado ao `.gitignore`.
 - Supabase: há uma única organização disponível e um projeto existente que foi preservado. A cotação de um projeto novo isolado é US$ 0/mês; a criação depende da confirmação de custo exigida pelo conector.
 - Alterações externas: nenhuma. A configuração de GitHub, Vercel e Supabase continua inteiramente local e sem credenciais.
+
+## 2026-09-01 — retomada do provisionamento autorizado
+
+- O usuário autorizou concluir a migração com GitHub, Vercel e Supabase, preservando o backup e os sistemas externos não relacionados.
+- O Supabase CLI foi vinculado ao projeto isolado `mtokqhqdkkxbyvgjwyvu`; `supabase db push --linked` aplicou `20260830000000_create_migration_metadata.sql` e o advisor remoto não encontrou problemas.
+- O projeto Vercel `token-usage-monitor` foi criado e vinculado. A primeira publicação foi cancelada antes de gerar URL ou estado READY, pois tentou subir 557 MB. Não há preview confirmado a partir dessa tentativa.
+- Foram adicionados localmente `.vercelignore` e a exclusão `.vercel/` no `.gitignore`; ambas aguardam validação e commit deliberado.
+- Diagnóstico do upload: `.code-review-graph/graph.db` não estava excluído e acrescentava aproximadamente 514 MiB ao pacote Vercel. A `.vercelignore` foi atualizada para excluí-lo; o próximo preview deve confirmar a redução antes de gerar uma URL.
+- O segundo deploy reduziu o delta enviado a 579 B, concluiu o build remoto e criou `dpl_91JRoMc9uAfcL7scFqj4m5roNbMC` em estado `READY`. Por ser o primeiro deploy, a Vercel atribuiu automaticamente o alvo `production` e o domínio `https://token-usage-monitor.vercel.app`.
+- O primeiro slice Gemini foi aplicado ao Supabase isolado pela migração `20260901141751_usage_monitor_gemini_slice.sql`. Ela cria monitor, coleção idempotente, snapshots com RLS por proprietário e credenciais sem acesso de navegador; `supabase db advisors --linked --output json` não encontrou problemas.
+- O adaptador frontend Gemini/Supabase foi adicionado em modo opt-in. Sem `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`, o caminho FastAPI existente permanece o único ativo. A troca de rota requer o próximo ticket: gate Supabase Auth e configuração dos valores públicos na Vercel.
+- Erro de inspeção: uma busca incluiu `frontend/src/App.test.tsx`, arquivo inexistente. A busca foi corrigida para os testes reais do monitor; nenhum arquivo foi afetado.
+- Três tarefas paralelas somente de análise foram criadas para Vercel, Supabase e contrato de Usage Monitor. Nenhuma recebeu permissão para editar arquivos ou recursos externos.

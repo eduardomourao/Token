@@ -12,6 +12,7 @@ import { listAccounts } from "@/features/accounts/api";
 import type { AccountSummary } from "@/features/accounts/schemas";
 import { getOpenCodeGoUsageMonitor } from "@/features/opencode-go-usage/api";
 import { getGeminiUsageMonitor } from "@/features/gemini-usage/api";
+import { isSupabaseUsageMonitorEnabled } from "@/features/gemini-usage/supabase-usage-monitor";
 import { getAntigravityUsageMonitor } from "@/features/antigravity-usage/api";
 import { useThemeStore } from "@/hooks/use-theme";
 
@@ -47,6 +48,7 @@ function wrappedIndex(index: number, total: number): number {
 }
 
 export function UsageMonitorPage() {
+  const supabaseUsageMonitorEnabled = isSupabaseUsageMonitorEnabled();
   const { t } = useTranslation();
   const [initialSelection] = useState<UsageMonitorSelection | null>(() => readUsageMonitorSelection());
   const activeSelectionRef = useRef<UsageMonitorSelection | null>(initialSelection);
@@ -59,15 +61,17 @@ export function UsageMonitorPage() {
     select: (response) => response.accounts,
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
+    enabled: !supabaseUsageMonitorEnabled,
   });
   const monitorQuery = useQuery({
     queryKey: ["opencode-go-usage", "monitor", "usage-monitor"],
     queryFn: getOpenCodeGoUsageMonitor,
     refetchInterval: POLL_INTERVAL_MS,
     refetchIntervalInBackground: true,
+    enabled: !supabaseUsageMonitorEnabled,
   });
   const geminiQuery = useQuery({ queryKey: ["gemini-usage", "monitor", "usage-monitor"], queryFn: getGeminiUsageMonitor, refetchInterval: POLL_INTERVAL_MS, refetchIntervalInBackground: true });
-  const antigravityQuery = useQuery({ queryKey: ["antigravity-usage", "monitor", "usage-monitor"], queryFn: getAntigravityUsageMonitor, refetchInterval: POLL_INTERVAL_MS, refetchIntervalInBackground: true });
+  const antigravityQuery = useQuery({ queryKey: ["antigravity-usage", "monitor", "usage-monitor"], queryFn: getAntigravityUsageMonitor, refetchInterval: POLL_INTERVAL_MS, refetchIntervalInBackground: true, enabled: !supabaseUsageMonitorEnabled });
   const accounts = accountsQuery.data ?? EMPTY_ACCOUNTS;
   const includeOpenCode = monitorQuery.data?.configured === true;
   const selections = useMemo<UsageMonitorSelection[]>(() => [

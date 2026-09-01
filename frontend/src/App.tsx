@@ -11,6 +11,7 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthGate } from "@/features/auth/components/auth-gate";
+import { UsageMonitorAccessGate } from "@/features/usage-monitor/components/usage-monitor-access-gate";
 import { useAuthStore } from "@/features/auth/hooks/use-auth";
 import { TelemetryConsentDialog } from "@/features/settings/components/telemetry-consent-dialog";
 import { useTimeFormatStore } from "@/hooks/use-time-format";
@@ -78,16 +79,11 @@ export default function App() {
     <TooltipProvider>
       <Toaster richColors />
       <PwaUpdatePrompt />
-      <AuthGate>
-        <Routes>
-          <Route
-            path="/usage-monitor"
-            element={(
-              <Suspense fallback={null}>
-                <UsageMonitorPage />
-              </Suspense>
-            )}
-          />
+      <Routes>
+        <Route path="/usage-monitor" element={(
+          <UsageMonitorAccessGate><Suspense fallback={null}><UsageMonitorPage /></Suspense></UsageMonitorAccessGate>
+        )} />
+        <Route element={<AuthGate><AppLayout /></AuthGate>}>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -98,8 +94,8 @@ export default function App() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/firewall" element={<Navigate to="/settings?advanced=1#firewall" replace />} />
           </Route>
-        </Routes>
-      </AuthGate>
+        </Route>
+      </Routes>
     </TooltipProvider>
   );
 }

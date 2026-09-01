@@ -73,3 +73,11 @@ Fase 1 — descoberta, backup e definição de escopo.
 ## Questão bloqueadora
 
 O proxy OpenAI atual mantém WebSockets, SSE, leases, caches e muitos loops de vida longa. A plataforma Vercel + Supabase pode sustentar painel, dados e coletores periódicos, mas não garante equivalência desse proxy persistente. A decisão de produto precisa escolher entre: manter o proxy fora do escopo da primeira publicação, redesenhá-lo com semântica reduzida, ou aceitar outro runtime para ele. Nenhuma implementação desse fluxo começa antes da decisão.
+
+## Retomada em 2026-09-01
+
+- O fluxo inicial fica limitado ao Usage Monitor e ao projeto Supabase isolado `mtokqhqdkkxbyvgjwyvu`; o CRM `lzsaaufsdcmqlasjrqck` está fora do escopo.
+- A fundação remota foi aplicada e o advisor do projeto isolado não reportou problemas.
+- O projeto Vercel `token-usage-monitor` foi criado, mas não há preview concluído: o primeiro upload foi interrompido antes de gerar URL, pois incluiu 557 MB de dependências locais.
+- A `.vercelignore` local foi criada para reduzir o pacote. Três frentes paralelas, somente de análise, foram iniciadas para Vercel, Supabase e contrato do monitor.
+- O segundo deploy passou após excluir o banco local de grafo: `dpl_91JRoMc9uAfcL7scFqj4m5roNbMC` está READY. Por ser o primeiro do projeto, a Vercel o atribuiu automaticamente ao alvo de produção; o monitor ainda não é funcional sem o fluxo vertical Supabase.
