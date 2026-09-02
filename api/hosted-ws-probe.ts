@@ -111,7 +111,7 @@ export default async function handler(request: NodeRequest, response: NodeRespon
       socket.on("message", async (data, isBinary) => {
         if (isBinary || active) { safeClose(socket, "invalid_client_frame", "Hosted gateway accepts one text response.create at a time."); return; }
         const parsed = parseHostedResponseCreate(data.toString());
-        if (!parsed.ok) {
+        if (parsed.ok === false) {
           if (parsed.error === "ignored_client_frame") return;
           safeClose(socket, parsed.error, "Invalid Responses WebSocket frame.");
           return;
