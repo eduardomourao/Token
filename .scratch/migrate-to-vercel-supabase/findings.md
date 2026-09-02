@@ -61,3 +61,9 @@
 - A base tem 5 contas, 5.314 leituras de `usage_history`, 305 leituras de `additional_usage_history`, 127 decisões de quota e nenhum log de requisição, chave de API, automação, sessão HTTP bridge ou configuração de proxy ativa.
 - Credenciais OAuth das contas ficam nos campos criptografados de `accounts`; o primeiro modelo hospedado não os copia para o Supabase e não habilita ações que alterem routing. Ele transporta somente metadados de leitura e históricos de quota sob RLS do proprietário.
 - Próximo slice: Dashboard de leitura autenticado pelo Supabase, com resposta compatível para contas e quotas. Logs de requisição, automações, chaves e proxy permanecem fora desse slice porque não existem dados ativos ou dependem do runtime persistente.
+
+## API keys hospedadas — 2026-09-02
+
+- A fonte SQLite ativa foi consultada com URI `mode=ro`: `api_keys_total=0` e `active=0`. Não há chave legada a copiar, recriptografar ou exibir.
+- O runtime legado gera `sk-clb-<token_urlsafe(32)>`, guarda SHA-256 e expõe somente o prefixo persistido. A função hospedada deve manter o mesmo limite de segredo: chave completa somente na resposta de criação, hash privado para autenticação.
+- O endpoint hospedado atual aceita somente JWT Supabase; o próximo vertical deve validar Bearer API key no serviço, resolver o owner por RPC privada e remover `Authorization` antes do upstream.

@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
+import { apiKeyHash, buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -70,12 +70,19 @@ function responseHeaders(upstream: Response): Headers {
   return headers;
 }
 
-async function resolveOwnerId(request: Request, supabaseUrl: string, anonKey: string): Promise<string | null> {
+async function resolveOwnerId(request: Request, supabaseUrl: string, anonKey: string, adminKey: string): Promise<string | null> {
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) return null;
+  const token = authorization.slice("Bearer ".length);
   const client = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } } });
   const { data, error } = await client.auth.getUser();
-  return error || !data.user ? null : data.user.id;
+  if (!error && data.user) return data.user.id;
+
+  const keyHash = await apiKeyHash(token);
+  if (!keyHash) return null;
+  const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  const { data: ownerId, error: keyError } = await admin.rpc("hosted_proxy_authenticate_api_key", { requested_key_hash: keyHash });
+  return keyError || typeof ownerId !== "string" ? null : ownerId;
 }
 
 export default {
@@ -93,7 +100,7 @@ export default {
     const credentialKey = requiredEnv("HOSTED_PROXY_CREDENTIAL_KEY");
     if (!supabaseUrl || !anonKey || !adminKey || !credentialKey) return json(503, { error: "proxy_not_configured" });
 
-    const ownerId = await resolveOwnerId(request, supabaseUrl, anonKey);
+    const ownerId = await resolveOwnerId(request, supabaseUrl, anonKey, adminKey);
     if (!ownerId) return json(401, { error: "unauthorized" });
 
     let payload: unknown;

@@ -44,9 +44,10 @@ export function HostedDashboardPage() {
               Leitura atualizada automaticamente. Operações de routing seguem no runtime legado.
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/usage-monitor">Abrir monitor de uso</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline"><Link to="/usage-monitor">Abrir monitor de uso</Link></Button>
+            <Button asChild variant="outline"><Link to="/api-keys">Gerenciar API keys</Link></Button>
+          </div>
         </header>
 
         {dashboard.isPending ? <div className="rounded-xl border bg-card p-6 text-sm text-muted-foreground">Carregando contas e quotas…</div> : null}

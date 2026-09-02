@@ -23,7 +23,7 @@ export const config = {
 export function buildEdgeFunctionHeaders(headers: Record<string, HeaderValue>): Record<string, string> {
   const authorization = headers["x-supabase-authorization"] ?? headers.authorization;
   if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) {
-    throw new Error("authorization bearer JWT is required");
+    throw new Error("authorization bearer credential is required");
   }
   return {
     authorization,

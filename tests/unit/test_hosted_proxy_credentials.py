@@ -11,6 +11,7 @@ USAGE_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "2026090
 OAUTH_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901220000_hosted_proxy_oauth_refresh.sql"
 RATE_LIMIT_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902000000_hosted_proxy_rate_limit_status.sql"
 SESSION_AFFINITY_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902003000_hosted_proxy_session_affinity.sql"
+API_KEYS_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902010000_hosted_proxy_api_keys.sql"
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -109,3 +110,18 @@ def test_hosted_proxy_session_affinity_is_private_and_hash_only() -> None:
     assert "create function public.hosted_proxy_session_account" in sql
     assert "create function public.hosted_proxy_bind_session" in sql
     assert "revoke all on function public.hosted_proxy_session_account(uuid, text), public.hosted_proxy_bind_session(uuid, text, text) from public, anon, authenticated" in sql
+
+
+def test_hosted_proxy_api_keys_are_hash_only_and_service_role_only() -> None:
+    sql = API_KEYS_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create table app.hosted_proxy_api_keys" in sql
+    assert "key_hash text not null unique" in sql
+    assert "key_hash ~ '^[0-9a-f]{64}$'" in sql
+    assert "force row level security" in sql
+    assert "revoke all on table app.hosted_proxy_api_keys from anon, authenticated" in sql
+    assert "create function public.hosted_proxy_authenticate_api_key" in sql
+    assert "set last_used_at = now()" in sql
+    assert "create function public.hosted_proxy_create_api_key" in sql
+    assert "create function public.hosted_proxy_revoke_api_key" in sql
+    assert "to service_role" in sql

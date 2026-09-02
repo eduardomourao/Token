@@ -104,3 +104,9 @@ export async function sessionKeyHash(sessionId: string | null): Promise<string |
   const digest = await crypto.subtle.digest("SHA-256", textEncoder.encode(sessionId));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
+
+export async function apiKeyHash(apiKey: string | null): Promise<string | null> {
+  if (!apiKey?.startsWith("sk-clb-") || apiKey.length > 512) return null;
+  const digest = await crypto.subtle.digest("SHA-256", textEncoder.encode(apiKey));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import {
+  apiKeyHash,
   buildUpstreamHeaders,
   decryptCredential,
   encryptCredential,
@@ -84,4 +85,10 @@ test("sessionKeyHash hashes accepted session ids and rejects oversized or missin
   await expect(sessionKeyHash("session-1")).resolves.toBe("84097828fc31a8c8d29210df48901a85de7fd013f686b17be77d1be29cb7a98b");
   await expect(sessionKeyHash(null)).resolves.toBeNull();
   await expect(sessionKeyHash("x".repeat(513))).resolves.toBeNull();
+});
+
+test("apiKeyHash accepts the hosted key format and never returns the plaintext", async () => {
+  await expect(apiKeyHash("sk-clb-example")).resolves.toBe("d215ecd55a0efa8d5cdbf9141d151277cf078f41296510e7152d43d88f4b5a93");
+  await expect(apiKeyHash("not-a-hosted-key")).resolves.toBeNull();
+  await expect(apiKeyHash(`sk-clb-${"x".repeat(513)}`)).resolves.toBeNull();
 });

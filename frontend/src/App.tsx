@@ -41,6 +41,9 @@ const UsageMonitorPage = lazy(() =>
 const HostedDashboardPage = lazy(() =>
   import("@/features/dashboard/components/hosted-dashboard-page").then((m) => ({ default: m.HostedDashboardPage })),
 );
+const HostedProxyApiKeysPage = lazy(() =>
+  import("@/features/api-keys/components/hosted-proxy-api-keys-page").then((m) => ({ default: m.HostedProxyApiKeysPage })),
+);
 
 function HostedApp() {
   return (
@@ -53,6 +56,9 @@ function HostedApp() {
         )} />
         <Route path="/dashboard" element={(
           <UsageMonitorAccessGate><Suspense fallback={null}><HostedDashboardPage /></Suspense></UsageMonitorAccessGate>
+        )} />
+        <Route path="/api-keys" element={(
+          <UsageMonitorAccessGate><Suspense fallback={null}><HostedProxyApiKeysPage /></Suspense></UsageMonitorAccessGate>
         )} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

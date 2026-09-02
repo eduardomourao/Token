@@ -26,3 +26,10 @@ test("buildEdgeFunctionHeaders accepts the explicit Vercel-safe JWT header", () 
     "content-type": "application/json",
   });
 });
+
+test("buildEdgeFunctionHeaders forwards a Bearer API key for Edge-side validation", () => {
+  expect(buildEdgeFunctionHeaders({ authorization: "Bearer sk-clb-example" })).toEqual({
+    authorization: "Bearer sk-clb-example",
+    "content-type": "application/json",
+  });
+});
