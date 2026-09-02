@@ -99,3 +99,9 @@
 - A migration `20260901214500_hosted_proxy_usage_refresh.sql` adicionou a sequência de histórico hospedado, RPCs privadas de coleta e o cron `refresh-hosted-proxy-usage` a cada cinco minutos. A Edge Function de mesmo nome decripta credenciais apenas em memória, consulta `GET /backend-api/wham/usage` e grava somente percentuais, resets e metadados não secretos no read model.
 - A verificação foi disparada dentro do banco com o segredo já armazenado no Vault. O `pg_net` recebeu HTTP 200 sem timeout/erro; o histórico subiu de 5.314 para 5.334 linhas e o agregado privado confirmou 5 contas `active` com `last_refresh_at` preenchido. Nenhum token, e-mail ou payload foi retornado pela verificação.
 - Mantém-se a limitação correta: uma resposta 401 passa a conta para `reauth_required`, mas a rotação de refresh token e o retry/failover da própria requisição de Responses ainda não foram portados.
+
+## 2026-09-02 — rotação hospedada de OAuth
+
+- A migration `20260901220000_hosted_proxy_oauth_refresh.sql` adicionou claims privadas de 45 segundos e RPCs de compare-and-set para a família de tokens recriptografados. Somente `service_role` pode ler, adquirir, girar ou liberar uma claim.
+- Tanto `refresh-proxy-usage` quanto `proxy-responses` tentam uma única renovação após HTTP 401. A troca usa o refresh token exclusivamente em memória, persiste a nova família somente se o ciphertext ainda é o esperado e repete a requisição upstream uma vez. Falhas permanentes conhecidas viram `reauth_required`; contenção transitória não invalida a conta.
+- A migration e ambas as funções foram publicadas. A prova remota não consumiu OAuth: uma claim retornou `true`, foi liberada e a consulta agregada confirmou zero claims residuais.

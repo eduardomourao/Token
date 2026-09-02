@@ -1,7 +1,8 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildUpstreamHeaders, decryptCredential, parseCompletedResponse, validateResponsePayload } from "./proxy.ts";
+import { buildUpstreamHeaders, decryptCredential, encryptCredential, parseCompletedResponse, validateResponsePayload } from "./proxy.ts";
+import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
 const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
@@ -14,6 +15,12 @@ type HostedProxyAccount = {
 
 type HostedProxyCredential = {
   access_token_ciphertext: string;
+};
+
+type RefreshCredentials = {
+  access_token_ciphertext: string;
+  refresh_token_ciphertext: string;
+  id_token_ciphertext: string;
 };
 
 const json = (status: number, payload: Record<string, unknown>) => Response.json(payload, {
@@ -131,6 +138,19 @@ export default {
       return json(502, { error: "upstream_unavailable" });
     }
 
+    if (upstream.status === 401) {
+      const rotatedAccessToken = await rotateOAuthTokens(admin, ownerId, account.legacy_account_id, credentialKey);
+      if (rotatedAccessToken) {
+        const retriedHeaders = buildUpstreamHeaders(request.headers, rotatedAccessToken, account.chatgpt_account_id);
+        retriedHeaders["x-codex-installation-id"] = account.codex_installation_id;
+        try {
+          upstream = await fetch(UPSTREAM_URL, { method: "POST", headers: retriedHeaders, body: JSON.stringify(payload) });
+        } catch {
+          return json(502, { error: "upstream_unavailable" });
+        }
+      }
+    }
+
     if (payload.stream === true) return new Response(upstream.body, { status: upstream.status, headers: responseHeaders(upstream) });
     if (!upstream.ok) return new Response(upstream.body, { status: upstream.status, headers: responseHeaders(upstream) });
     const completed = parseCompletedResponse(await upstream.text());
@@ -138,3 +158,34 @@ export default {
     return new Response(JSON.stringify(completed), { status: 200, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "access-control-allow-origin": "*" } });
   },
 };
+
+async function rotateOAuthTokens(admin: ReturnType<typeof createClient>, ownerId: string, legacyAccountId: string, credentialKey: string): Promise<string | null> {
+  const { data, error } = await admin.rpc("hosted_proxy_credentials_for_refresh", { requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId });
+  const credentials = Array.isArray(data) ? data[0] as RefreshCredentials | undefined : undefined;
+  if (error || !credentials) return null;
+  const { data: claimRows, error: claimError } = await admin.rpc("hosted_proxy_claim_refresh", {
+    requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId, expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+  });
+  if (claimError || claimRows !== true) return null;
+  let rotated = false;
+  try {
+    const next = await refreshOAuthTokens(await decryptCredential(credentials.refresh_token_ciphertext, credentialKey));
+    const { data: didRotate, error: rotateError } = await admin.rpc("hosted_proxy_rotate_credentials", {
+      requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId, expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+      next_access_token_ciphertext: await encryptCredential(next.accessToken, credentialKey),
+      next_refresh_token_ciphertext: await encryptCredential(next.refreshToken, credentialKey),
+      next_id_token_ciphertext: await encryptCredential(next.idToken, credentialKey),
+    });
+    rotated = didRotate === true && !rotateError;
+    return rotated ? next.accessToken : null;
+  } catch (error) {
+    if (error instanceof OAuthRefreshError && error.permanent) {
+      await admin.rpc("hosted_proxy_mark_reauth_required", { requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId });
+    }
+    return null;
+  } finally {
+    if (!rotated) await admin.rpc("hosted_proxy_release_refresh_claim", {
+      requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId, expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+    });
+  }
+}

@@ -8,6 +8,7 @@ MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901210000_hosted
 IMPORT_RPC_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901211500_hosted_proxy_import_rpc.sql"
 ROUTING_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901213000_hosted_proxy_routing_v1.sql"
 USAGE_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901214500_hosted_proxy_usage_refresh.sql"
+OAUTH_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901220000_hosted_proxy_oauth_refresh.sql"
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -68,3 +69,16 @@ def test_hosted_proxy_usage_refresh_keeps_credentials_private_and_is_scheduled()
     assert "grant execute on function public.hosted_proxy_accounts_for_usage_refresh(uuid) to service_role" in sql
     assert "cron.schedule(" in sql
     assert "refresh-hosted-proxy-usage" in sql
+
+
+def test_hosted_proxy_oauth_rotation_has_private_claim_and_ciphertext_cas() -> None:
+    sql = OAUTH_REFRESH_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create table app.hosted_proxy_refresh_claims" in sql
+    assert "force row level security" in sql
+    assert "create function public.hosted_proxy_claim_refresh" in sql
+    assert "locked_until < now()" in sql
+    assert "create function public.hosted_proxy_rotate_credentials" in sql
+    assert "refresh_token_ciphertext = expected_refresh_token_ciphertext" in sql
+    assert "revoke all on function public.hosted_proxy_claim_refresh" in sql
+    assert "to service_role" in sql

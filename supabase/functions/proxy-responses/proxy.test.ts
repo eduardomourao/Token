@@ -3,12 +3,13 @@ import { expect, test } from "bun:test";
 import {
   buildUpstreamHeaders,
   decryptCredential,
+  encryptCredential,
   parseCompletedResponse,
 } from "./proxy.ts";
 
 const textEncoder = new TextEncoder();
 
-async function encryptCredential(plaintext: string, key: Uint8Array, iv: Uint8Array): Promise<string> {
+async function encryptCredentialFixture(plaintext: string, key: Uint8Array, iv: Uint8Array): Promise<string> {
   const cryptoKey = await crypto.subtle.importKey("raw", key, "AES-GCM", false, ["encrypt"]);
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, cryptoKey, textEncoder.encode(plaintext));
   return `v1.${Buffer.from(iv).toString("base64url")}.${Buffer.from(ciphertext).toString("base64url")}`;
@@ -17,9 +18,18 @@ async function encryptCredential(plaintext: string, key: Uint8Array, iv: Uint8Ar
 test("decryptCredential accepts the versioned AES-GCM credential envelope", async () => {
   const key = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
   const iv = Uint8Array.from({ length: 12 }, (_, index) => index + 32);
-  const envelope = await encryptCredential("access-token", key, iv);
+  const envelope = await encryptCredentialFixture("access-token", key, iv);
 
   await expect(decryptCredential(envelope, Buffer.from(key).toString("base64url"))).resolves.toBe("access-token");
+});
+
+test("encryptCredential produces a fresh decryptable credential envelope", async () => {
+  const key = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
+  const encodedKey = Buffer.from(key).toString("base64url");
+  const envelope = await encryptCredential("rotated-token", encodedKey);
+
+  expect(envelope).toStartWith("v1.");
+  await expect(decryptCredential(envelope, encodedKey)).resolves.toBe("rotated-token");
 });
 
 test("buildUpstreamHeaders removes caller credentials and applies the selected account identity", () => {

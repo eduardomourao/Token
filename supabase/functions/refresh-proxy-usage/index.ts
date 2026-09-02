@@ -1,8 +1,9 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { decryptCredential } from "../proxy-responses/proxy.ts";
+import { decryptCredential, encryptCredential } from "../proxy-responses/proxy.ts";
 import { ChatGPTUsageError, parseChatGPTUsagePayload } from "./collector.ts";
+import { OAuthRefreshError, refreshOAuthTokens } from "./oauth.ts";
 
 const USAGE_URL = "https://chatgpt.com/backend-api/wham/usage";
 
@@ -10,6 +11,12 @@ type RefreshAccount = {
   legacy_account_id: string;
   chatgpt_account_id: string | null;
   access_token_ciphertext: string;
+};
+
+type RefreshCredentials = {
+  access_token_ciphertext: string;
+  refresh_token_ciphertext: string;
+  id_token_ciphertext: string;
 };
 
 const json = (status: number, payload: Record<string, unknown>) => Response.json(payload, { status, headers: { "cache-control": "no-store" } });
@@ -39,19 +46,26 @@ export default {
     let reauthRequired = 0;
     for (const account of accounts) {
       try {
-        const accessToken = await decryptCredential(account.access_token_ciphertext, credentialKey);
+        let accessToken = await decryptCredential(account.access_token_ciphertext, credentialKey);
         const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}`, Accept: "application/json" };
         if (account.chatgpt_account_id && !account.chatgpt_account_id.startsWith("email_") && !account.chatgpt_account_id.startsWith("local_")) {
           headers["chatgpt-account-id"] = account.chatgpt_account_id;
         }
-        const upstream = await fetch(USAGE_URL, { headers });
+        let upstream = await fetch(USAGE_URL, { headers });
         if (upstream.status === 401) {
-          await admin.rpc("hosted_proxy_mark_reauth_required", {
-            requested_owner_id: ownerId,
-            requested_legacy_account_id: account.legacy_account_id,
-          });
-          reauthRequired += 1;
-          continue;
+          const rotatedAccessToken = await rotateOAuthTokens(admin, ownerId, account.legacy_account_id, credentialKey);
+          if (rotatedAccessToken) {
+            headers.Authorization = `Bearer ${rotatedAccessToken}`;
+            accessToken = rotatedAccessToken;
+            upstream = await fetch(USAGE_URL, { headers });
+          }
+          if (upstream.status === 401) {
+            // A permanent refresh failure marks reauth_required inside rotateOAuthTokens.
+            // If another invocation owns the short refresh claim, leave the account
+            // unchanged instead of incorrectly invalidating healthy rotating tokens.
+            failed += 1;
+            continue;
+          }
         }
         if (!upstream.ok) {
           failed += 1;
@@ -91,6 +105,40 @@ export default {
 function requiredEnv(name: string): string | null {
   const value = Deno.env.get(name)?.trim();
   return value || null;
+}
+
+async function rotateOAuthTokens(admin: ReturnType<typeof createClient>, ownerId: string, legacyAccountId: string, credentialKey: string): Promise<string | null> {
+  const { data, error } = await admin.rpc("hosted_proxy_credentials_for_refresh", { requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId });
+  const credentials = Array.isArray(data) ? data[0] as RefreshCredentials | undefined : undefined;
+  if (error || !credentials) return null;
+  const { data: claimRows, error: claimError } = await admin.rpc("hosted_proxy_claim_refresh", {
+    requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId, expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+  });
+  if (claimError || claimRows !== true) return null;
+  let rotated = false;
+  try {
+    const refreshToken = await decryptCredential(credentials.refresh_token_ciphertext, credentialKey);
+    const next = await refreshOAuthTokens(refreshToken);
+    const { data: didRotate, error: rotateError } = await admin.rpc("hosted_proxy_rotate_credentials", {
+      requested_owner_id: ownerId,
+      requested_legacy_account_id: legacyAccountId,
+      expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+      next_access_token_ciphertext: await encryptCredential(next.accessToken, credentialKey),
+      next_refresh_token_ciphertext: await encryptCredential(next.refreshToken, credentialKey),
+      next_id_token_ciphertext: await encryptCredential(next.idToken, credentialKey),
+    });
+    rotated = didRotate === true && !rotateError;
+    return rotated ? next.accessToken : null;
+  } catch (error) {
+    if (error instanceof OAuthRefreshError && error.permanent) {
+      await admin.rpc("hosted_proxy_mark_reauth_required", { requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId });
+    }
+    return null;
+  } finally {
+    if (!rotated) await admin.rpc("hosted_proxy_release_refresh_claim", {
+      requested_owner_id: ownerId, requested_legacy_account_id: legacyAccountId, expected_refresh_token_ciphertext: credentials.refresh_token_ciphertext,
+    });
+  }
 }
 
 function serviceRoleKeyFromEnv(): string | null {

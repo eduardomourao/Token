@@ -1,4 +1,5 @@
 const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
 
 const BLOCKED_INBOUND_HEADERS = new Set([
   "authorization",
@@ -37,6 +38,13 @@ export async function decryptCredential(envelope: string, base64UrlKey: string):
     toArrayBuffer(base64UrlToBytes(encodedCiphertext)),
   );
   return textDecoder.decode(plaintext);
+}
+
+export async function encryptCredential(plaintext: string, base64UrlKey: string): Promise<string> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await crypto.subtle.importKey("raw", toArrayBuffer(base64UrlToBytes(base64UrlKey)), "AES-GCM", false, ["encrypt"]);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, textEncoder.encode(plaintext));
+  return `v1.${btoa(String.fromCharCode(...iv)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}.${btoa(String.fromCharCode(...new Uint8Array(ciphertext))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "")}`;
 }
 
 export function buildUpstreamHeaders(
