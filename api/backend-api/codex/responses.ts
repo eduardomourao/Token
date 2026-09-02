@@ -1,1 +1,1 @@
-export { config, default } from "../../v1/responses";
+export { config, default } from "../../v1/responses-ws";

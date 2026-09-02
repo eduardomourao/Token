@@ -115,7 +115,7 @@ function isTerminal(frame: string): boolean {
   } catch { return false; }
 }
 
-export default async function handler(request: NodeRequest, response: NodeResponse): Promise<void> {
+export async function handleHostedWebSocketUpgrade(request: NodeRequest, response: NodeResponse): Promise<void> {
   const headers = requestHeaders(request.headers);
   const upgradeRequest = new Request("https://token-usage-monitor.vercel.app/api/hosted-ws-probe", {
     method: request.method ?? "GET",
@@ -225,3 +225,5 @@ export default async function handler(request: NodeRequest, response: NodeRespon
     response.status(503).json({ error: "websocket_unavailable" });
   }
 }
+
+export default handleHostedWebSocketUpgrade;

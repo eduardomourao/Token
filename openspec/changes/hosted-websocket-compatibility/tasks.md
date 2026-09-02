@@ -31,10 +31,10 @@
       before the downstream socket completed.)
 - [x] 3.2 Relay a validated create to the existing HTTP/SSE proxy with only
       the authenticated caller context and a bounded session affinity key.
-- [ ] 3.3 Support one explicit cancellation path and one replay path from a
+- [x] 3.3 Support one explicit cancellation path and one replay path from a
       persisted cursor; refuse replay when a frame was visible but cannot be
       proven non-duplicating.
-- [ ] 3.4 Add remote end-to-end tests for create, incremental events,
+- [x] 3.4 Add remote end-to-end tests for create, incremental events,
       cancellation, reconnect on a different Function and non-duplication.
 
 ## 4. Cutover

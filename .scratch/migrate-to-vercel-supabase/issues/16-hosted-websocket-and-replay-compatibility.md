@@ -3,7 +3,7 @@
 **What to decide and build:** preservar clientes WebSocket do proxy legado sem
 declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
 
-**Status:** implementation — create relay proven; cancel/replay pending
+**Status:** implementation — create, cancel and replay proven; native rollout pending
 
 - [x] Inventariar o runtime legado: WebSocket envolve sessão persistente,
   replay/resume, recuperação, quota, afinidade e controle de concorrência.
@@ -19,7 +19,7 @@ declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
 - [x] Provar o gateway com `@vercel/functions` + `ws`: handshake autenticado,
   conversão incremental SSE→frames OpenAI, cancelamento, limite de duração e
   erro terminal seguro.
-- [~] Provar persistência no Supabase: spool owner-scoped, cursor de replay,
+- [x] Provar persistência no Supabase: spool owner-scoped, cursor de replay,
   retenção, retomada em outra Function e recusa explícita quando uma saída já
   visível não puder ser repetida sem duplicação.
 - [x] Executar teste ponta a ponta contra deploy Vercel e cliente WebSocket
@@ -75,3 +75,11 @@ deve depender de memória da Function nem do Runtime Cache da Vercel.
   validação.
 - A chave temporária foi removida no fluxo e a consulta posterior encontrou
   zero chaves de prova persistidas. O lint remoto do schema passou.
+
+### Evidência de cancelamento e replay — 2026-09-02
+
+- Um `response.cancel` enviado 300 ms após `response.create` encerrou a
+  solicitação com o terminal seguro `response.incomplete`, sem expor conteúdo.
+- Uma reconexão autenticada usando o mesmo spool com `after_cursor = 1`
+  reemitiu oito eventos, começando em `response.in_progress`; o primeiro
+  evento já visível não foi duplicado e a conexão fechou normalmente.
