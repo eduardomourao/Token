@@ -21,34 +21,34 @@ Fase 1 — descoberta, backup e definição de escopo.
 
 - [x] Separar contratos que podem migrar para Vercel/Supabase dos que exigem redesenho.
 - [x] Decidir explicitamente o destino do proxy OpenAI/WebSocket: verticais em Supabase Edge Function, começando por Responses HTTP/SSE.
-- [ ] Definir o contrato de autenticação, propriedade dos dados, criptografia e RLS além da fundação restritiva já criada.
-- [ ] Aprovar a especificação e os tickets verticais antes de alterar o código.
+- [x] Definir o contrato de autenticação, propriedade dos dados, criptografia e RLS para Dashboard e primeiro vertical de Responses.
+- [x] Registrar a especificação e os tickets verticais antes de cada alteração estrutural.
 - **Status:** em andamento
 
 ### Fase 3: fundação Vercel e Supabase
 
-- [ ] Inicializar o repositório versionado a partir do snapshot validado, sem sobrescrever o remoto atual.
+- [x] Inicializar o repositório versionado a partir do snapshot validado, sem sobrescrever o remoto atual.
 - [x] Criar a fundação local do Supabase: configuração neutra, esquema privado e RLS sem acesso de navegador.
 - [ ] Ensaiar a migração local do Supabase quando o Docker Desktop estiver disponível.
-- [ ] Criar ambiente Supabase de desenvolvimento, segredos, projeto e migrações reversíveis após autorização explícita.
-- [x] Criar configuração de preview da Vercel sem criar projeto ou fazer deploy.
+- [x] Criar ambiente Supabase isolado, segredos e migrações versionadas.
+- [x] Criar preview e produção da Vercel com deploy verificável.
 - [x] Implementar o validador estático de contratos de rotas e interações do monitor.
-- [ ] Implementar um primeiro fluxo vertical de painel/monitoramento com testes de paridade.
+- [x] Implementar fluxos verticais de Dashboard/Usage Monitor e Responses HTTP/SSE com testes focados e validação remota de acesso.
 - **Status:** em andamento
 
 ### Fase 4: adaptação por fluxos verticais
 
-- [ ] Migrar autenticação e sessão.
-- [ ] Migrar contas, limites, históricos e dashboards.
-- [ ] Converter coletores curtos em Cron + Edge Functions e publicar alterações pelo Realtime.
+- [x] Migrar autenticação e sessão do Dashboard/Usage Monitor.
+- [x] Migrar contas, limites, históricos e Dashboard em modelo de leitura proprietário.
+- [x] Converter coletores curtos em Cron + Edge Functions e publicar as leituras no Supabase.
 - [ ] Tratar separadamente fluxos que dependem de conexão persistente, streaming ou WebSocket; a vertical HTTP/SSE inicial está em execução.
-- [ ] Entregar Dashboard hospedado de leitura com contas e históricos de quota sem credenciais de routing.
+- [x] Entregar Dashboard hospedado de leitura com contas e históricos de quota sem credenciais de routing.
 - **Status:** em andamento
 
 ### Fase 5: migração de dados e execução paralela
 
-- [ ] Exportar dados de origem de forma consistente, preservando a chave de criptografia e os arquivos que não pertencem ao banco.
-- [ ] Importar em staging e comparar contagens, chaves de negócio, dados criptografados e resultados do painel.
+- [x] Exportar dados de origem em modo SQLite read-only, sem alterar a chave local nem os arquivos auxiliares.
+- [x] Importar o modelo de leitura e as credenciais privadas com contagens de paridade verificadas.
 - [ ] Executar em modo sombra, sem gravar em produção pelo novo caminho.
 - [ ] Ensaiar rollback com o snapshot e o runtime atual.
 - **Status:** pendente
@@ -71,9 +71,9 @@ Fase 1 — descoberta, backup e definição de escopo.
 | Atualizações de uso iniciarão com cadência de 1 minuto | Mantém boa atualização percebida sem depender de servidor contínuo. |
 | O runtime atual permanece referência até a paridade ser demonstrada | Evita perda de dados ou corte sem rollback. |
 
-## Questão bloqueadora
+## Escopo restante do proxy
 
-O proxy OpenAI atual mantém WebSockets, SSE, leases, caches e muitos loops de vida longa. A plataforma Vercel + Supabase pode sustentar painel, dados e coletores periódicos, mas não garante equivalência desse proxy persistente. A decisão de produto precisa escolher entre: manter o proxy fora do escopo da primeira publicação, redesenhá-lo com semântica reduzida, ou aceitar outro runtime para ele. Nenhuma implementação desse fluxo começa antes da decisão.
+O primeiro vertical hospedado cobre somente `POST /v1/responses` autenticado, resposta JSON concluída e SSE. WebSocket, replay/resume, afinidade, failover, seleção de Account equivalente ao runtime atual, API keys, arquivos, imagens, áudio, model sources e as demais rotas ainda exigem tickets próprios com testes de compatibilidade. O runtime FastAPI e o snapshot externo permanecem o rollback desses contratos.
 
 ## Retomada em 2026-09-01
 

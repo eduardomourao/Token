@@ -76,3 +76,13 @@
 - O Dashboard hospedado usa Supabase Auth e RLS, exibe somente leitura, atualiza a consulta em intervalos de 60 segundos e encaminha ao Usage Monitor. No modo hospedado, rotas ainda não migradas redirecionam ao Dashboard em vez de chamar o FastAPI ausente.
 - RLS foi validada com o papel `authenticated`: a sessão proprietária enxerga 5 contas e uma sessão com outro `sub` enxerga 0. A primeira simulação retornou falso porque buscava o owner já sob RLS; a segunda fixou o claim antes de trocar o papel.
 - Validação local: 2 testes Python do read model, 12 testes Vitest focados, typecheck e build Vite aprovados. O advisor remoto informa somente `auth_leaked_password_protection`; a documentação do Supabase limita esse controle ao plano Pro+, enquanto esta aplicação usa magic link e não login por senha.
+
+## 2026-09-01 — primeiro proxy hospedado e promoção controlada
+
+- A decisão do proxy foi aceita para a arquitetura Vercel + Supabase: a Edge Function `proxy-responses` preserva o primeiro contrato HTTP de Responses (JSON concluído e SSE), enquanto WebSocket, replay, afinidade, failover, API keys e rotas auxiliares continuam explicitamente fora deste vertical.
+- A migration privada aplicou `app.hosted_proxy_accounts` e `app.hosted_proxy_credentials` com RLS forçado e sem grants de navegador. RPCs `SECURITY DEFINER` são executáveis somente por `service_role`, porque o schema `app` não integra a API pública do PostgREST.
+- O importador read-only recriptografou 5 credenciais do SQLite de Fernet para envelopes AES-GCM. A chave hospedada é derivada com contexto próprio da chave local, e somente o derivado reside como segredo da Edge Function. Nenhum token foi exibido.
+- A validação remota comprovou: 401 sem JWT; RPC privada inacessível ao papel de navegador; uma Account ativa visível somente ao papel de serviço; e 409 para um JWT temporário válido sem Account atribuída. Cada usuário temporário de teste foi removido; o projeto manteve exatamente um proprietário.
+- O rewrite externo inicial da Vercel removia `Authorization`. A rota foi substituída por `api/v1/responses`, uma função curta da Vercel que encaminha somente `x-supabase-authorization` ao Supabase como `Authorization`. O preview protegido foi validado com o bypass autenticado da CLI e recebeu 409 no mesmo cenário de teste.
+- GitHub: os commits até `060df93` foram enviados para `eduardomourao/Token` na `main`.
+- Vercel: a versão `dpl_AxCtkSTgWAC3xcsX4Ee1eQBqR1CV` está READY em produção, com alias `https://token-usage-monitor.vercel.app`; inspeção confirma a função `api/v1/responses` e o alias respondeu HTTP 200 pelo bypass autenticado.
