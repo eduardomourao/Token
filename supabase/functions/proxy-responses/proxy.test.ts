@@ -44,6 +44,8 @@ test("buildUpstreamHeaders removes caller credentials and applies the selected a
       Authorization: "Bearer user-session-jwt",
       Host: "token-usage-monitor.vercel.app",
       "Content-Length": "100",
+      "content-type": "text/plain",
+      accept: "application/json",
       Forwarded: "for=198.51.100.1",
       "User-Agent": "openai-node/4",
       "x-codex-session-id": "session-1",
@@ -58,6 +60,10 @@ test("buildUpstreamHeaders removes caller credentials and applies the selected a
   expect(headers["Content-Length"]).toBeUndefined();
   expect(headers.Forwarded).toBeUndefined();
   expect(headers["x-codex-session-id"]).toBeUndefined();
+  expect(headers["content-type"]).toBeUndefined();
+  expect(headers.accept).toBeUndefined();
+  expect(headers["Content-Type"]).toBe("application/json");
+  expect(headers.Accept).toBe("text/event-stream");
 });
 
 test("parseCompletedResponse returns the completed response from an upstream SSE stream", () => {

@@ -4,7 +4,9 @@ const textEncoder = new TextEncoder();
 const BLOCKED_INBOUND_HEADERS = new Set([
   "authorization",
   "chatgpt-account-id",
+  "content-type",
   "content-length",
+  "accept",
   "host",
   "forwarded",
   "x-real-ip",
