@@ -8,6 +8,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function normalizeHostedResponsesInput(input: unknown): unknown[] | null {
+  if (Array.isArray(input)) return input;
+  if (typeof input === "string") {
+    return [{ role: "user", content: [{ type: "input_text", text: input }] }];
+  }
+  return null;
+}
+
 export function parseHostedResponseCreate(frame: string): HostedResponseCreateResult {
   if (Buffer.byteLength(frame, "utf8") > HOSTED_WEBSOCKET_MAX_FRAME_BYTES) {
     return { ok: false, error: "invalid_client_frame" };
@@ -22,7 +30,8 @@ export function parseHostedResponseCreate(frame: string): HostedResponseCreateRe
 
   if (!isRecord(parsed)) return { ok: false, error: "invalid_client_frame" };
   if (parsed.type !== "response.create") return { ok: false, error: "ignored_client_frame" };
-  if (typeof parsed.model !== "string" || parsed.model.length === 0 || !("input" in parsed)) {
+  const input = normalizeHostedResponsesInput(parsed.input);
+  if (typeof parsed.model !== "string" || parsed.model.length === 0 || input === null) {
     return { ok: false, error: "invalid_client_frame" };
   }
   if (parsed.stream === false || (parsed.stream !== undefined && parsed.stream !== true)) {
@@ -30,7 +39,7 @@ export function parseHostedResponseCreate(frame: string): HostedResponseCreateRe
   }
 
   const { type: _type, ...payload } = parsed;
-  return { ok: true, payload: { ...payload, stream: true } };
+  return { ok: true, payload: { ...payload, input, stream: true, store: false } };
 }
 
 export class HostedResponsesSseDecoder {

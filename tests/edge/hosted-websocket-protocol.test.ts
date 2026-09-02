@@ -19,8 +19,9 @@ test("accepts one bounded response.create frame and converts it to an SSE reques
     ok: true,
     payload: {
       model: "gpt-5.4",
-      input: "hello",
+      input: [{ role: "user", content: [{ type: "input_text", text: "hello" }] }],
       stream: true,
+      store: false,
     },
   });
 });
@@ -38,9 +39,25 @@ test("preserves legacy WebSocket create frames that omit stream by requesting SS
     ok: true,
     payload: {
       model: "gpt-5.4",
-      input: "legacy default stream",
+      input: [{ role: "user", content: [{ type: "input_text", text: "legacy default stream" }] }],
       stream: true,
+      store: false,
     },
+  });
+});
+
+test("preserves structured input while enforcing the upstream's no-store contract", () => {
+  const input = [{ role: "user", content: [{ type: "input_text", text: "already structured" }] }];
+
+  expect(parseHostedResponseCreate(JSON.stringify({
+    type: "response.create",
+    model: "gpt-5.4",
+    input,
+    stream: true,
+    store: true,
+  }))).toEqual({
+    ok: true,
+    payload: { model: "gpt-5.4", input, stream: true, store: false },
   });
 });
 
@@ -54,6 +71,10 @@ test("rejects malformed frames but preserves the legacy no-op behavior for non-c
     error: "ignored_client_frame",
   });
   expect(parseHostedResponseCreate(JSON.stringify({ type: "response.create", model: "gpt-5.4" }))).toEqual({
+    ok: false,
+    error: "invalid_client_frame",
+  });
+  expect(parseHostedResponseCreate(JSON.stringify({ type: "response.create", model: "gpt-5.4", input: {} }))).toEqual({
     ok: false,
     error: "invalid_client_frame",
   });
