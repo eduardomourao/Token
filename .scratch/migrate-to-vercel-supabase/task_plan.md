@@ -20,7 +20,7 @@ Fase 1 — descoberta, backup e definição de escopo.
 ### Fase 2: contrato de migração
 
 - [x] Separar contratos que podem migrar para Vercel/Supabase dos que exigem redesenho.
-- [ ] Decidir explicitamente o destino do proxy OpenAI/WebSocket, que não tem equivalência serverless garantida.
+- [x] Decidir explicitamente o destino do proxy OpenAI/WebSocket: verticais em Supabase Edge Function, começando por Responses HTTP/SSE.
 - [ ] Definir o contrato de autenticação, propriedade dos dados, criptografia e RLS além da fundação restritiva já criada.
 - [ ] Aprovar a especificação e os tickets verticais antes de alterar o código.
 - **Status:** em andamento
@@ -41,7 +41,7 @@ Fase 1 — descoberta, backup e definição de escopo.
 - [ ] Migrar autenticação e sessão.
 - [ ] Migrar contas, limites, históricos e dashboards.
 - [ ] Converter coletores curtos em Cron + Edge Functions e publicar alterações pelo Realtime.
-- [ ] Tratar separadamente fluxos que dependem de conexão persistente, streaming ou WebSocket.
+- [ ] Tratar separadamente fluxos que dependem de conexão persistente, streaming ou WebSocket; a vertical HTTP/SSE inicial está em execução.
 - [ ] Entregar Dashboard hospedado de leitura com contas e históricos de quota sem credenciais de routing.
 - **Status:** em andamento
 

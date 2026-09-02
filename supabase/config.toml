@@ -56,3 +56,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/collect-opencode-go-usage/deno.json"
 entrypoint = "./functions/collect-opencode-go-usage/index.ts"
+
+[functions.proxy-responses]
+enabled = true
+verify_jwt = false
+import_map = "./functions/proxy-responses/deno.json"
+entrypoint = "./functions/proxy-responses/index.ts"

@@ -8,7 +8,7 @@ O produto atual depende de um runtime FastAPI persistente, banco e arquivos loca
 
 O GitHub se torna a fonte versionada e o ponto de CI. A Vercel atende a interface e operações curtas sob demanda. O Supabase passa a hospedar dados relacionais, autenticação, atualizações Realtime e coletores periódicos idempotentes. A versão atual permanece a referência até que cada fluxo tenha sido validado em modo paralelo e um rollback tenha sido ensaiado.
 
-O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma decisão de escopo independente. Eles não serão implicitamente removidos, simplificados ou declarados compatíveis antes de uma proposta específica.
+O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma decisão de escopo independente. O primeiro vertical hospedado preserva somente `POST /v1/responses` (JSON concluído e SSE), executado por Supabase Edge Function com JWT de proprietário e credenciais em schema privado. WebSocket, replay, afinidade, failover, API keys e rotas auxiliares continuam fora desse vertical até que cada contrato tenha testes de compatibilidade próprios.
 
 ## User Stories
 
@@ -49,7 +49,7 @@ O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma
 
 ## Out of Scope
 
-- Substituir o proxy persistente por funções serverless sem uma especificação de compatibilidade própria.
+- Declarar WebSocket, replay, afinidade, failover, API keys ou as rotas auxiliares do proxy como compatíveis sem uma especificação de compatibilidade própria.
 - Publicar credenciais, criar projetos externos, migrar dados reais, trocar domínio ou enviar commits ao GitHub nesta fundação.
 - Proxy de inferência, WebSocket, SSE persistente, automações, chaves de API e operações de OAuth/routing no Dashboard hospedado de leitura.
 
