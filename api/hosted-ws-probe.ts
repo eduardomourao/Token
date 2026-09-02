@@ -30,6 +30,16 @@ export function buildHostedWebSocketPreflightHeaders(headers: Headers): Record<s
   };
 }
 
+export function buildHostedWebSocketSpoolHeaders(headers: Headers, action: "create" | "append"): Record<string, string> {
+  const authorization = headers.get("x-supabase-authorization") ?? headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) throw new Error("authorization bearer credential is required");
+  return {
+    authorization,
+    "content-type": "application/json",
+    "x-codex-websocket-spool-action": action,
+  };
+}
+
 function requestHeaders(headers: Record<string, HeaderValue>): Headers {
   const normalized = new Headers();
   for (const [name, value] of Object.entries(headers)) {
@@ -62,7 +72,7 @@ function relayHeaders(headers: Headers): Record<string, string> {
 async function spool(headers: Headers, action: "create" | "append", payload: Record<string, unknown>): Promise<Response> {
   return fetch(EDGE_FUNCTION_URL, {
     method: "POST",
-    headers: { ...buildHostedWebSocketPreflightHeaders(headers), "content-type": "application/json", "x-codex-websocket-spool-action": action },
+    headers: buildHostedWebSocketSpoolHeaders(headers, action),
     body: JSON.stringify(payload),
   });
 }
@@ -118,10 +128,19 @@ export default async function handler(request: NodeRequest, response: NodeRespon
         }
         active = true;
         const spoolId = randomUUID();
+        let stage = "spool_create";
         try {
-          if (!(await spool(headers, "create", { spool_id: spoolId })).ok) throw new Error("spool create failed");
+          const createdSpool = await spool(headers, "create", { spool_id: spoolId });
+          if (!createdSpool.ok) {
+            console.error("hosted_ws_probe_failed", { stage, status: createdSpool.status });
+            throw new Error("spool create failed");
+          }
+          stage = "relay";
           const upstream = await fetch(EDGE_FUNCTION_URL, { method: "POST", headers: relayHeaders(headers), body: JSON.stringify(parsed.payload) });
-          if (!upstream.ok || !upstream.body) throw new Error("relay failed");
+          if (!upstream.ok || !upstream.body) {
+            console.error("hosted_ws_probe_failed", { stage, status: upstream.status });
+            throw new Error("relay failed");
+          }
           const decoder = new HostedResponsesSseDecoder();
           const reader = upstream.body.getReader();
           const textDecoder = new TextDecoder();
@@ -129,7 +148,12 @@ export default async function handler(request: NodeRequest, response: NodeRespon
             const { done, value } = await reader.read();
             if (done) break;
             for (const frame of decoder.push(textDecoder.decode(value, { stream: true }))) {
-              if (!(await spool(headers, "append", { spool_id: spoolId, event_frame: JSON.parse(frame), is_terminal: isTerminal(frame) })).ok) throw new Error("spool append failed");
+              stage = "spool_append";
+              const appendedEvent = await spool(headers, "append", { spool_id: spoolId, event_frame: JSON.parse(frame), is_terminal: isTerminal(frame) });
+              if (!appendedEvent.ok) {
+                console.error("hosted_ws_probe_failed", { stage, status: appendedEvent.status });
+                throw new Error("spool append failed");
+              }
               socket.send(frame);
               if (isTerminal(frame)) active = false;
             }

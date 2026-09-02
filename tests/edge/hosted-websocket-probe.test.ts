@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import {
+  buildHostedWebSocketSpoolHeaders,
   buildHostedWebSocketPreflightHeaders,
   isHostedWebSocketUpgrade,
 } from "../../api/hosted-ws-probe.ts";
@@ -25,4 +26,14 @@ test("the authorization preflight forwards only the caller bearer credential", (
     "x-codex-websocket-auth-check": "1",
   });
   expect(() => buildHostedWebSocketPreflightHeaders(new Headers())).toThrow("authorization");
+});
+
+test("spool operations authenticate without accidentally becoming an auth preflight", () => {
+  expect(buildHostedWebSocketSpoolHeaders(new Headers({
+    authorization: "Bearer sk-clb-example",
+  }), "create")).toEqual({
+    authorization: "Bearer sk-clb-example",
+    "content-type": "application/json",
+    "x-codex-websocket-spool-action": "create",
+  });
 });

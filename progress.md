@@ -145,3 +145,5 @@
 | 2026-08-29 | OpenSpec CLI missing from PATH | 1 | Use ephemeral official `npx @fission-ai/openspec@1.11.0`. |
 | 2026-08-29 | Full OpenSpec tree failed in unrelated spec | 1 | Scoped monitor change passed; `model-source-routing` lacks its required Purpose heading. |
 | 2026-08-29 | VCS-based review unavailable | 1 | No `.git` directory; preserve formal review as blocked. |
+| 2026-09-02 | Controlled WebSocket relay probe called the API-key RPC with an obsolete three-argument signature | 1 | No key was created and no provider request was made; use the current six-argument hash/prefix RPC contract. |
+| 2026-09-02 | Authenticated WebSocket upgrade returned a terminal gateway error before spool creation | 1 | The spool request incorrectly retained the preflight marker, so the Edge function returned `204` early; separate spool headers and add a focused regression test before redeploying. |
