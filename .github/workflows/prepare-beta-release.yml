@@ -23,30 +23,33 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
     steps:
-      - name: Report release automation credential source
+      - name: Report release automation availability
+        id: release_automation
         shell: bash
-        env:
-          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "${RELEASE_PLEASE_TOKEN}" ]; then
-            echo "::warning::Using GitHub Actions token; downstream workflows are not triggered by this token."
+            echo "::warning::RELEASE_PLEASE_TOKEN is not configured; beta release PR automation is intentionally skipped."
+            echo "available=false" >> "$GITHUB_OUTPUT"
           else
-            echo "Using RELEASE_PLEASE_TOKEN for release automation."
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Checkout main
+        if: steps.release_automation.outputs.available == 'true'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Find open release-please PR
+        if: steps.release_automation.outputs.available == 'true'
         id: release_pr
         shell: bash
         run: |
@@ -68,7 +71,7 @@ jobs:
           fi
 
       - name: Fetch release metadata
-        if: steps.release_pr.outputs.found == 'true'
+        if: steps.release_automation.outputs.available == 'true' && steps.release_pr.outputs.found == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -76,7 +79,7 @@ jobs:
           git fetch origin release-please--branches--main:refs/remotes/origin/release-please--branches--main
 
       - name: Prepare beta version bump
-        if: steps.release_pr.outputs.found == 'true'
+        if: steps.release_automation.outputs.available == 'true' && steps.release_pr.outputs.found == 'true'
         id: prepare
         shell: bash
         run: |
@@ -85,7 +88,7 @@ jobs:
             --changelog-path "${RUNNER_TEMP}/beta-release-changelog.md"
 
       - name: Detect changes
-        if: steps.release_pr.outputs.found == 'true' && steps.prepare.outputs.should_create != 'false'
+        if: steps.release_automation.outputs.available == 'true' && steps.release_pr.outputs.found == 'true' && steps.prepare.outputs.should_create != 'false'
         id: changes
         shell: bash
         run: |
@@ -99,7 +102,7 @@ jobs:
           fi
 
       - name: Commit beta release PR branch
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.release_automation.outputs.available == 'true' && steps.changes.outputs.changed == 'true'
         shell: bash
         env:
           BRANCH: ${{ steps.prepare.outputs.branch }}
@@ -116,7 +119,7 @@ jobs:
           git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
 
       - name: Open or update beta release PR
-        if: steps.changes.outputs.changed == 'true'
+        if: steps.release_automation.outputs.available == 'true' && steps.changes.outputs.changed == 'true'
         shell: bash
         env:
           BRANCH: ${{ steps.prepare.outputs.branch }}
@@ -182,7 +185,7 @@ jobs:
           fi
 
       - name: Close superseded beta release PRs
-        if: steps.release_pr.outputs.found == 'true'
+        if: steps.release_automation.outputs.available == 'true' && steps.release_pr.outputs.found == 'true'
         shell: bash
         env:
           BRANCH: ${{ steps.prepare.outputs.branch }}
