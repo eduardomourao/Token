@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
 import sqlite3
@@ -51,6 +52,13 @@ def _credential_key(value: str) -> bytes:
     if len(key) != 32:
         raise ValueError("HOSTED_PROXY_CREDENTIAL_KEY must be a base64url-encoded 32-byte key")
     return key
+
+
+def derive_hosted_credential_key(source_fernet_key: bytes) -> str:
+    """Derive a purpose-bound hosted key without sending the Fernet key upstream."""
+    raw_source_key = base64.urlsafe_b64decode(source_fernet_key)
+    derived = hashlib.sha256(b"codex-lb:hosted-proxy-credentials:v1\0" + raw_source_key).digest()
+    return base64.urlsafe_b64encode(derived).rstrip(b"=").decode()
 
 
 def _encrypt(plaintext: str, key: bytes) -> str:
@@ -143,7 +151,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", type=Path, default=DEFAULT_SQLITE_PATH)
     parser.add_argument("--source-encryption-key-file", type=Path, default=DEFAULT_SOURCE_KEY_PATH)
     parser.add_argument("--owner-id", required=True)
-    parser.add_argument("--hosted-credential-key", default=os.getenv("HOSTED_PROXY_CREDENTIAL_KEY"))
+    parser.add_argument("--hosted-credential-key", default=os.getenv("HOSTED_PROXY_CREDENTIAL_KEY"), help="optional base64url 32-byte override; defaults to a purpose-bound derivation of the source key")
     parser.add_argument("--supabase-url", default=os.getenv("SUPABASE_URL"))
     parser.add_argument("--service-role-key", default=os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
     parser.add_argument("--apply", action="store_true", help="perform private-schema upserts; default only validates and reports counts")
@@ -152,13 +160,13 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if not args.hosted_credential_key:
-        raise SystemExit("--hosted-credential-key or HOSTED_PROXY_CREDENTIAL_KEY is required")
+    source_fernet_key = args.source_encryption_key_file.read_bytes()
+    hosted_credential_key = args.hosted_credential_key or derive_hosted_credential_key(source_fernet_key)
     model = read_hosted_proxy_credentials(
         args.source,
         args.owner_id,
-        args.source_encryption_key_file.read_bytes(),
-        args.hosted_credential_key,
+        source_fernet_key,
+        hosted_credential_key,
     )
     counts = {"accounts": len(model.accounts), "credentials": len(model.credentials), "applied": args.apply}
     if not args.apply:

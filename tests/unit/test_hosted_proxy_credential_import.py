@@ -75,6 +75,9 @@ def test_proxy_importer_reencrypts_credentials_without_returning_plaintext(tmp_p
 
     hosted_key = base64.urlsafe_b64encode(bytes(range(32))).rstrip(b"=").decode()
     importer = _load_importer()
+    derived_key = importer.derive_hosted_credential_key(source_key)
+    assert derived_key != source_key.decode()
+    assert len(base64.urlsafe_b64decode(derived_key + "=" * (-len(derived_key) % 4))) == 32
     model = importer.read_hosted_proxy_credentials(
         source,
         "00000000-0000-0000-0000-000000000001",
