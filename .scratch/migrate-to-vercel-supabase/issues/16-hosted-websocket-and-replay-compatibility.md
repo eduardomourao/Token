@@ -57,3 +57,7 @@ deve depender de memória da Function nem do Runtime Cache da Vercel.
   monotônico e leitura somente via RPC `service_role`. RLS está habilitada e
   forçada nas duas tabelas; a Function ainda não grava eventos, portanto não
   há replay exposto antes do teste ponta a ponta.
+- O deploy remoto comprovou `101 Switching Protocols` para uma chave temporária
+  autenticada e `401` antes de upgrade sem Bearer. A chave de prova foi
+  removida no mesmo fluxo; a consulta posterior confirmou zero chaves de
+  teste persistidas.

@@ -197,3 +197,7 @@
 - O advisor ainda alerta que a proteção global contra senha vazada está
   desativada no Auth. É uma configuração global preexistente e deve ser
   ativada antes de liberar cadastro por senha ao público.
+- O probe remoto concluiu a prova de transporte: upgrade sem Bearer devolve
+  `401` antes do socket; uma API key temporária permitiu `101 Switching
+  Protocols` e recebeu somente `hosted.websocket.probe`. A chave foi apagada
+  no mesmo comando e a contagem de chaves temporárias retornou zero.

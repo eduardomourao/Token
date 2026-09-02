@@ -18,7 +18,7 @@
 - [x] 2.1 Add a non-native Vercel probe route that validates authorization
       before upgrade, enforces message bounds and never logs request content or
       credentials.
-- [ ] 2.2 Deploy the probe and verify a real authenticated WebSocket handshake
+- [x] 2.2 Deploy the probe and verify a real authenticated WebSocket handshake
       plus an unauthorized pre-upgrade denial. Do not publish it as a native
       route or change an existing rewrite.
 
