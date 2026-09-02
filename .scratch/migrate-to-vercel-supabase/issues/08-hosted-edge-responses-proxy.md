@@ -6,7 +6,7 @@ relay SSE/JSON sem expor tokens no navegador.
 
 **Blocked by:** ticket 06 accepted.
 
-**Status:** in-progress
+**Status:** implemented
 
 - [x] Definir schema privado sem grants de navegador.
 - [x] Criar importador read-only que recriptografa Fernet local em AES-GCM.
@@ -15,7 +15,17 @@ relay SSE/JSON sem expor tokens no navegador.
 - [x] Publicar a função e comprovar 401 sem JWT, leitura privada pelo papel de serviço e 409 para um JWT válido sem Account vinculada.
 - [x] Substituir a seleção alfabética pela política persistida `burn_first` → `normal` → `preserve`, com bloqueio por status, quota conhecida e menor uso recente.
 - [x] Expor os aliases HTTP nativos `/backend-api/codex/responses` e `/backend-api/codex/v1/responses` pela mesma borda Vercel, preservando a afinidade somente até a Edge Function.
-- [ ] Confirmar relay upstream com um fluxo real sem imprimir credenciais.
+- [x] Confirmar relay upstream com um fluxo real sem imprimir credenciais.
+
+## Evidência — 2026-09-02
+
+- O fluxo WebSocket nativo normal passou pelo mesmo relay HTTP/SSE da Edge
+  Function e produziu os nove eventos esperados, de `response.created` a
+  `response.completed`, sem registrar texto, token ou credencial.
+- As provas de cancelamento nas duas aliases nativas confirmaram também o
+  terminal seguro `response.incomplete`. Todas as API keys sintéticas usadas
+  pelas sondas foram removidas e a verificação posterior encontrou zero
+  registros restantes.
 
 ## Compatibilidade intencional
 
