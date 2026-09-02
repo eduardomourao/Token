@@ -3,7 +3,7 @@
 **What to decide and build:** preservar clientes WebSocket do proxy legado sem
 declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
 
-**Status:** discovery
+**Status:** implementation — isolated upgrade probe
 
 - [x] Inventariar o runtime legado: WebSocket envolve sessão persistente,
   replay/resume, recuperação, quota, afinidade e controle de concorrência.
@@ -16,7 +16,7 @@ declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
   encaminha somente `response.create` autenticado ao relay HTTP/SSE; o
   Supabase deve armazenar o spool de eventos e o cursor por resposta para
   reconexão/replay.
-- [ ] Provar o gateway com `@vercel/functions` + `ws`: handshake autenticado,
+- [~] Provar o gateway com `@vercel/functions` + `ws`: handshake autenticado,
   conversão incremental SSE→frames OpenAI, cancelamento, limite de duração e
   erro terminal seguro.
 - [ ] Provar persistência no Supabase: spool owner-scoped, cursor de replay,
@@ -40,3 +40,16 @@ exige `@vercel/functions` e `ws`, não roda localmente fora de Next.js e a
 conexão continua limitada à duração da Function. A implementação deve ser
 validada por deploy remoto e manter todo estado de retomada no Supabase; não
 deve depender de memória da Function nem do Runtime Cache da Vercel.
+
+## Evidência de implementação — 2026-09-02
+
+- O adaptador puro valida `response.create`, preserva o default legado de
+  `stream`, decodifica SSE fragmentado e rejeita frames inválidos antes de
+  qualquer relay.
+- A nova Function isolada `/api/hosted-ws-probe` exige um preflight do
+  `proxy-responses` antes de tentar `experimental_upgradeWebSocket()`, limita
+  a mensagem a 256 KiB e responde somente com um evento de probe. Ela não
+  encaminha input, não cria spool e não toca nos caminhos nativos.
+- O `proxy-responses` publicado no projeto `mtokqhqdkkxbyvgjwyvu` reconhece o
+  preflight exato somente depois de autenticar JWT ou API key. Um POST sem
+  credencial retornou `401 unauthorized`, sem seleção de conta.

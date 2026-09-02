@@ -73,3 +73,9 @@
 - O proxy legado tem WebSockets stateful com replay/resume, sessões, recuperação e backpressure; uma rota WebSocket simples não demonstra paridade.
 - A documentação oficial do Supabase descreve Realtime Broadcast/replay e seu protocolo Phoenix. Ele é útil como transporte próprio, mas não aceita sem adaptação o protocolo OpenAI do cliente legado.
 - A documentação oficial da Vercel aponta suporte recente a WebSocket, mas ressalta que conexões futuras não são garantidas na mesma Function e recomenda estado durável externo. Antes de mover o endpoint legado é necessário provar um gateway de protocolo e recuperação em condições de desconexão.
+- A referência da Vercel confirma que `experimental_upgradeWebSocket()` atende
+  Functions de frameworks que não são Next.js, mas exige `@vercel/functions`
+  e `ws`; no app Vite não há execução local compatível. O módulo deve expor
+  uma interface pequena: autenticar handshake, receber `response.create`,
+  converter SSE incremental em frames OpenAI e persistir/reproduzir somente
+  eventos que possam ser retomados sem duplicação.

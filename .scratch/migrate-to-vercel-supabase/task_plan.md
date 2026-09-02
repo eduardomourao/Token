@@ -45,6 +45,23 @@ Fase 1 — descoberta, backup e definição de escopo.
 - [x] Entregar Dashboard hospedado de leitura com contas e históricos de quota sem credenciais de routing.
 - **Status:** em andamento
 
+#### Corte ativo — gateway WebSocket/replay hospedado
+
+- [x] Confirmar que a Vercel oferece `experimental_upgradeWebSocket()` para
+  Functions de outros frameworks e que o app atual pode usar uma Function
+  `fetch` sem migrar para Next.js.
+- [ ] Construir, com TDD, o adaptador WebSocket → relay HTTP/SSE para o
+  subconjunto `response.create`, mantendo credenciais e afinidade fora do
+  upstream.
+- [ ] Modelar no Supabase spool owner-scoped, cursor, retenção e recusa de
+  replay inseguro; nenhum estado de reconexão pode depender da memória da
+  Function ou do Runtime Cache Vercel.
+- [ ] Provar handshake, streaming incremental, cancelamento, reconnect/replay
+  e encerramento por duração no deploy Vercel antes de publicar o caminho
+  nativo `wss`.
+- **Status:** em andamento — API de WebSocket é experimental, requer `ws` e
+  não possui execução local fora do Next.js; a prova será remota.
+
 ### Fase 5: migração de dados e execução paralela
 
 - [x] Exportar dados de origem em modo SQLite read-only, sem alterar a chave local nem os arquivos auxiliares.

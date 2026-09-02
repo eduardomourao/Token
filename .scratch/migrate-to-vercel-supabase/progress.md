@@ -157,3 +157,29 @@
 - A borda Vercel agora encaminha `/backend-api/codex/responses` e `/backend-api/codex/v1/responses` ao mesmo relay já usado por `/v1/responses`. O relay carrega o Bearer e `x-codex-session-id` apenas até a Edge Function; o identificador é limitado a 512 caracteres, transformado em hash para afinidade e removido antes da chamada upstream.
 - Treze testes Bun de borda/Edge Function e typecheck/build Vite passaram. A tentativa de `vercel build --prod` local instalou dependências e baixou as configurações, mas o executor não consegue iniciar `cmd.exe` (`ENOENT`); o arquivo temporário de ambiente foi removido sem leitura. O deploy GitHub–Vercel `866e8dc` compilou as Functions com êxito e ficou `READY`.
 - Sem credencial, ambos os aliases devolveram `401 {"error":"unauthorized"}` pela URL de produção. Isso comprova que eles alcançam o relay hospedado, sem iniciar uma chamada upstream; o relay autenticado permanece a prova separada que não consome quota nem expõe credenciais.
+
+## 2026-09-02 — retomada do gateway WebSocket/replay
+
+- O estado atual foi revalidado: worktree limpo, Functions hospedadas ativas e
+  deploy de produção `READY`. A configuração Matt já usa tracker Markdown,
+  `CONTEXT.md` e documentos de domínio, portanto o ticket 16 pode seguir como
+  implementação TDD sem criar uma estrutura paralela.
+- A referência oficial da Vercel confirma a Function de upgrade para outros
+  frameworks, porém a API é experimental, exige `ws` e não roda localmente
+  fora do Next.js. A prova deste corte será no deploy remoto; retries não
+  repetirão tentativas locais incompatíveis.
+
+## 2026-09-02 — probe WebSocket hospedado
+
+- Criada a mudança OpenSpec `hosted-websocket-compatibility`, validada em modo
+  estrito. A validação global continua bloqueada por uma falha preexistente em
+  `model-source-routing` (ausência de `## Purpose`).
+- Criado o adaptador puro com testes vermelho-verde: `response.create` legado
+  sem `stream` passa a SSE, SSE fragmentado somente emite JSON completo e
+  frames inválidos/cancelamento não chegam ao relay.
+- Publicada a pré-validação de WebSocket na Edge Function `proxy-responses`.
+  A chamada sem Bearer contra produção retornou `401 unauthorized`; nenhuma
+  credencial foi criada ou exibida.
+- Criada a Function Vercel não nativa `api/hosted-ws-probe.ts`, ainda sem
+  deploy GitHub. Ela não substitui `/backend-api/codex/responses` nem
+  `/v1/responses`.

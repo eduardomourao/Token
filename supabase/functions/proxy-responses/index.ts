@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { apiKeyHash, buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
+import { apiKeyHash, buildUpstreamHeaders, decryptCredential, encryptCredential, isHostedWebSocketAuthorizationCheck, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -88,7 +88,7 @@ async function resolveOwnerId(request: Request, supabaseUrl: string, anonKey: st
 export default {
   async fetch(request: Request): Promise<Response> {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS" } });
+      return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type, x-codex-websocket-auth-check", "access-control-allow-methods": "POST, OPTIONS" } });
     }
     if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
     const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -102,6 +102,9 @@ export default {
 
     const ownerId = await resolveOwnerId(request, supabaseUrl, anonKey, adminKey);
     if (!ownerId) return json(401, { error: "unauthorized" });
+    if (isHostedWebSocketAuthorizationCheck(request.headers)) {
+      return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+    }
 
     let payload: unknown;
     try {

@@ -90,6 +90,10 @@ export function validateResponsePayload(payload: unknown): payload is Record<str
   return Boolean(payload && typeof payload === "object" && !Array.isArray(payload) && "model" in payload && "input" in payload);
 }
 
+export function isHostedWebSocketAuthorizationCheck(headers: Headers): boolean {
+  return headers.get("x-codex-websocket-auth-check") === "1";
+}
+
 export function retryAfterDeadline(retryAfter: string | null, nowEpoch = Math.floor(Date.now() / 1000)): number {
   const seconds = retryAfter === null ? Number.NaN : Number(retryAfter);
   const delay = Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 30;

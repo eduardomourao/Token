@@ -5,6 +5,7 @@ import {
   buildUpstreamHeaders,
   decryptCredential,
   encryptCredential,
+  isHostedWebSocketAuthorizationCheck,
   mayFailoverBeforeVisibleOutput,
   parseCompletedResponse,
   retryAfterDeadline,
@@ -91,4 +92,10 @@ test("apiKeyHash accepts the hosted key format and never returns the plaintext",
   await expect(apiKeyHash("sk-clb-example")).resolves.toBe("d215ecd55a0efa8d5cdbf9141d151277cf078f41296510e7152d43d88f4b5a93");
   await expect(apiKeyHash("not-a-hosted-key")).resolves.toBeNull();
   await expect(apiKeyHash(`sk-clb-${"x".repeat(513)}`)).resolves.toBeNull();
+});
+
+test("websocket authorization preflight is an exact internal marker", () => {
+  expect(isHostedWebSocketAuthorizationCheck(new Headers({ "x-codex-websocket-auth-check": "1" }))).toBeTrue();
+  expect(isHostedWebSocketAuthorizationCheck(new Headers({ "x-codex-websocket-auth-check": "true" }))).toBeFalse();
+  expect(isHostedWebSocketAuthorizationCheck(new Headers())).toBeFalse();
 });
