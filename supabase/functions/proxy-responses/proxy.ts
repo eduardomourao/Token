@@ -94,6 +94,38 @@ export function isHostedWebSocketAuthorizationCheck(headers: Headers): boolean {
   return headers.get("x-codex-websocket-auth-check") === "1";
 }
 
+type HostedWebSocketSpoolOperation =
+  | { action: "create"; spoolId: string; sessionKeyHash: string | null }
+  | { action: "append"; spoolId: string; eventFrame: Record<string, unknown>; isTerminal: boolean }
+  | { action: "read"; spoolId: string; afterCursor: number };
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function parseHostedWebSocketSpoolOperation(action: string | null, payload: unknown): HostedWebSocketSpoolOperation | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const values = payload as Record<string, unknown>;
+  const spoolId = values.spool_id;
+  if (typeof spoolId !== "string" || !UUID_PATTERN.test(spoolId)) return null;
+  if (action === "create") {
+    const sessionKeyHash = values.session_key_hash;
+    return typeof sessionKeyHash === "string" && /^[0-9a-f]{64}$/i.test(sessionKeyHash) || sessionKeyHash === undefined
+      ? { action, spoolId, sessionKeyHash: sessionKeyHash ?? null }
+      : null;
+  }
+  if (action === "append") {
+    const eventFrame = values.event_frame;
+    if (!eventFrame || typeof eventFrame !== "object" || Array.isArray(eventFrame) || typeof values.is_terminal !== "boolean") return null;
+    return { action, spoolId, eventFrame: eventFrame as Record<string, unknown>, isTerminal: values.is_terminal };
+  }
+  if (action === "read") {
+    const afterCursor = values.after_cursor;
+    return typeof afterCursor === "number" && Number.isSafeInteger(afterCursor) && afterCursor >= 0
+      ? { action, spoolId, afterCursor }
+      : null;
+  }
+  return null;
+}
+
 export function retryAfterDeadline(retryAfter: string | null, nowEpoch = Math.floor(Date.now() / 1000)): number {
   const seconds = retryAfter === null ? Number.NaN : Number(retryAfter);
   const delay = Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 30;

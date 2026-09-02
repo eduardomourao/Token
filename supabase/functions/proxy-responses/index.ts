@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { apiKeyHash, buildUpstreamHeaders, decryptCredential, encryptCredential, isHostedWebSocketAuthorizationCheck, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
+import { apiKeyHash, buildUpstreamHeaders, decryptCredential, encryptCredential, isHostedWebSocketAuthorizationCheck, mayFailoverBeforeVisibleOutput, parseCompletedResponse, parseHostedWebSocketSpoolOperation, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -88,7 +88,7 @@ async function resolveOwnerId(request: Request, supabaseUrl: string, anonKey: st
 export default {
   async fetch(request: Request): Promise<Response> {
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type, x-codex-websocket-auth-check", "access-control-allow-methods": "POST, OPTIONS" } });
+      return new Response(null, { status: 204, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type, x-codex-websocket-auth-check, x-codex-websocket-spool-action", "access-control-allow-methods": "POST, OPTIONS" } });
     }
     if (request.method !== "POST") return json(405, { error: "method_not_allowed" });
     const contentLength = Number(request.headers.get("content-length") ?? "0");
@@ -102,8 +102,36 @@ export default {
 
     const ownerId = await resolveOwnerId(request, supabaseUrl, anonKey, adminKey);
     if (!ownerId) return json(401, { error: "unauthorized" });
+    const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
     if (isHostedWebSocketAuthorizationCheck(request.headers)) {
       return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+    }
+    const spoolAction = request.headers.get("x-codex-websocket-spool-action");
+    if (spoolAction) {
+      let operation: ReturnType<typeof parseHostedWebSocketSpoolOperation>;
+      try {
+        operation = parseHostedWebSocketSpoolOperation(spoolAction, JSON.parse(await request.text()));
+      } catch {
+        return json(400, { error: "invalid_websocket_spool_request" });
+      }
+      if (!operation) return json(400, { error: "invalid_websocket_spool_request" });
+      if (operation.action === "create") {
+        const { data, error } = await admin.rpc("hosted_proxy_create_websocket_spool", {
+          requested_id: operation.spoolId, requested_owner_id: ownerId, requested_session_key_hash: operation.sessionKeyHash,
+        });
+        return error ? json(503, { error: "proxy_storage_unavailable" }) : json(200, { spool: data ?? [] });
+      }
+      if (operation.action === "append") {
+        const { data, error } = await admin.rpc("hosted_proxy_append_websocket_event", {
+          requested_owner_id: ownerId, requested_spool_id: operation.spoolId,
+          requested_event_frame: operation.eventFrame, requested_is_terminal: operation.isTerminal,
+        });
+        return error || typeof data !== "number" ? json(409, { error: "websocket_spool_unavailable" }) : json(200, { cursor: data });
+      }
+      const { data, error } = await admin.rpc("hosted_proxy_read_websocket_events", {
+        requested_owner_id: ownerId, requested_spool_id: operation.spoolId, requested_after_cursor: operation.afterCursor,
+      });
+      return error ? json(503, { error: "proxy_storage_unavailable" }) : json(200, { events: data ?? [] });
     }
 
     let payload: unknown;
@@ -116,7 +144,6 @@ export default {
     }
     if (!validateResponsePayload(payload)) return json(400, { error: "invalid_responses_payload" });
 
-    const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { error: recoveryError } = await admin.rpc("hosted_proxy_recover_expired_rate_limits", { requested_owner_id: ownerId });
     if (recoveryError) return json(503, { error: "proxy_storage_unavailable" });
     const affinityKey = await sessionKeyHash(request.headers.get("x-codex-session-id"));

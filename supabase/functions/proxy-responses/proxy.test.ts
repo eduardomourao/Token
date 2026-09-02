@@ -6,6 +6,7 @@ import {
   decryptCredential,
   encryptCredential,
   isHostedWebSocketAuthorizationCheck,
+  parseHostedWebSocketSpoolOperation,
   mayFailoverBeforeVisibleOutput,
   parseCompletedResponse,
   retryAfterDeadline,
@@ -98,4 +99,37 @@ test("websocket authorization preflight is an exact internal marker", () => {
   expect(isHostedWebSocketAuthorizationCheck(new Headers({ "x-codex-websocket-auth-check": "1" }))).toBeTrue();
   expect(isHostedWebSocketAuthorizationCheck(new Headers({ "x-codex-websocket-auth-check": "true" }))).toBeFalse();
   expect(isHostedWebSocketAuthorizationCheck(new Headers())).toBeFalse();
+});
+
+test("websocket spool operations accept only bounded owner-safe payloads", () => {
+  expect(parseHostedWebSocketSpoolOperation("create", {
+    spool_id: "00000000-0000-4000-8000-000000000001",
+    session_key_hash: "a".repeat(64),
+  })).toEqual({
+    action: "create",
+    spoolId: "00000000-0000-4000-8000-000000000001",
+    sessionKeyHash: "a".repeat(64),
+  });
+  expect(parseHostedWebSocketSpoolOperation("append", {
+    spool_id: "00000000-0000-4000-8000-000000000001",
+    event_frame: { type: "response.created" },
+    is_terminal: false,
+  })).toEqual({
+    action: "append",
+    spoolId: "00000000-0000-4000-8000-000000000001",
+    eventFrame: { type: "response.created" },
+    isTerminal: false,
+  });
+  expect(parseHostedWebSocketSpoolOperation("read", {
+    spool_id: "00000000-0000-4000-8000-000000000001",
+    after_cursor: 4,
+  })).toEqual({ action: "read", spoolId: "00000000-0000-4000-8000-000000000001", afterCursor: 4 });
+  expect(parseHostedWebSocketSpoolOperation("append", {
+    spool_id: "not-a-uuid",
+    event_frame: { type: "response.created" },
+  })).toBeNull();
+  expect(parseHostedWebSocketSpoolOperation("read", {
+    spool_id: "00000000-0000-4000-8000-000000000001",
+    after_cursor: -1,
+  })).toBeNull();
 });

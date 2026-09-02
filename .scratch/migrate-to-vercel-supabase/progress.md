@@ -201,3 +201,11 @@
   `401` antes do socket; uma API key temporária permitiu `101 Switching
   Protocols` e recebeu somente `hosted.websocket.probe`. A chave foi apagada
   no mesmo comando e a contagem de chaves temporárias retornou zero.
+
+## 2026-09-02 — RPC de spool pelo relay
+
+- `proxy-responses` agora expõe create, append e read do spool somente depois
+  de autenticar o owner por JWT/API key. Prova remota sintética: create=1,
+  cursor=1 e events=1; o spool e a chave temporária foram apagados no finally.
+- A primeira tentativa usou `curl` com JSON escapado pelo PowerShell e falhou
+  no próprio cliente; a repetição usou `Invoke-RestMethod` e comprovou o fluxo.
