@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { buildEdgeFunctionHeaders } from "./responses.ts";
+import { buildEdgeFunctionHeaders } from "../../api/v1/responses.ts";
 
 test("buildEdgeFunctionHeaders preserves only the caller JWT required by the Supabase Edge Function", () => {
   const headers = buildEdgeFunctionHeaders({
