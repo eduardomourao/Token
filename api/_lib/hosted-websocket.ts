@@ -4,6 +4,12 @@ type HostedResponseCreateResult =
   | { ok: true; payload: Record<string, unknown> }
   | { ok: false; error: "invalid_client_frame" | "ignored_client_frame" };
 
+export type HostedWebSocketControl =
+  | { type: "cancel" }
+  | { type: "replay"; spoolId: string; afterCursor: number };
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -14,6 +20,21 @@ function normalizeHostedResponsesInput(input: unknown): unknown[] | null {
     return [{ role: "user", content: [{ type: "input_text", text: input }] }];
   }
   return null;
+}
+
+export function parseHostedWebSocketControl(frame: string): HostedWebSocketControl | null {
+  if (Buffer.byteLength(frame, "utf8") > HOSTED_WEBSOCKET_MAX_FRAME_BYTES) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(frame);
+  } catch {
+    return null;
+  }
+  if (!isRecord(parsed)) return null;
+  if (parsed.type === "response.cancel") return { type: "cancel" };
+  if (parsed.type !== "response.replay" || typeof parsed.spool_id !== "string" || !UUID_PATTERN.test(parsed.spool_id)) return null;
+  if (typeof parsed.after_cursor !== "number" || !Number.isSafeInteger(parsed.after_cursor) || parsed.after_cursor < 0) return null;
+  return { type: "replay", spoolId: parsed.spool_id, afterCursor: parsed.after_cursor };
 }
 
 export function parseHostedResponseCreate(frame: string): HostedResponseCreateResult {

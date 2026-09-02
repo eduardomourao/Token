@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 
 import {
   HostedResponsesSseDecoder,
+  parseHostedWebSocketControl,
   parseHostedResponseCreate,
 } from "../../api/_lib/hosted-websocket.ts";
 
@@ -59,6 +60,16 @@ test("preserves structured input while enforcing the upstream's no-store contrac
     ok: true,
     payload: { model: "gpt-5.4", input, stream: true, store: false },
   });
+});
+
+test("accepts only bounded cancel and owner-scoped replay control frames", () => {
+  expect(parseHostedWebSocketControl(JSON.stringify({ type: "response.cancel" }))).toEqual({ type: "cancel" });
+  expect(parseHostedWebSocketControl(JSON.stringify({
+    type: "response.replay",
+    spool_id: "00000000-0000-4000-8000-000000000001",
+    after_cursor: 4,
+  }))).toEqual({ type: "replay", spoolId: "00000000-0000-4000-8000-000000000001", afterCursor: 4 });
+  expect(parseHostedWebSocketControl(JSON.stringify({ type: "response.replay", spool_id: "not-a-uuid", after_cursor: -1 }))).toBeNull();
 });
 
 test("rejects malformed frames but preserves the legacy no-op behavior for non-create frames", () => {

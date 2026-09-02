@@ -15,6 +15,7 @@ API_KEYS_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "202609020100
 WEBSOCKET_SPOOL_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_hosted_proxy_websocket_spool.sql"))
 WEBSOCKET_SPOOL_FIX_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_fix_hosted_proxy_websocket_spool_cleanup.sql"))
 WEBSOCKET_SPOOL_SCHEDULE_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_schedule_hosted_proxy_websocket_spool_purge.sql"))
+WEBSOCKET_SPOOL_STATUS_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_add_hosted_websocket_spool_status.sql"))
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -158,3 +159,13 @@ def test_hosted_websocket_spool_has_an_idempotent_periodic_purge() -> None:
     assert "cron.schedule" in sql
     assert "'*/5 * * * *'" in sql
     assert "select public.hosted_proxy_purge_expired_websocket_spools();" in sql
+
+
+def test_hosted_websocket_replay_status_is_private_and_active_only() -> None:
+    sql = WEBSOCKET_SPOOL_STATUS_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create function public.hosted_proxy_websocket_spool_status" in sql
+    assert "spool.owner_id = requested_owner_id" in sql
+    assert "spool.expires_at > now()" in sql
+    assert "revoke all" in sql
+    assert "to service_role" in sql

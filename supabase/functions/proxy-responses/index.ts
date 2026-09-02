@@ -128,10 +128,20 @@ export default {
         });
         return error || typeof data !== "number" ? json(409, { error: "websocket_spool_unavailable" }) : json(200, { cursor: data });
       }
+      const { data: spoolStatusRows, error: spoolStatusError } = await admin.rpc("hosted_proxy_websocket_spool_status", {
+        requested_owner_id: ownerId, requested_spool_id: operation.spoolId,
+      });
+      const spoolStatus = Array.isArray(spoolStatusRows) ? spoolStatusRows[0] as { next_cursor?: unknown; terminal_cursor?: unknown } | undefined : undefined;
+      if (spoolStatusError) return json(503, { error: "proxy_storage_unavailable" });
+      if (!spoolStatus || typeof spoolStatus.next_cursor !== "number") return json(409, { error: "websocket_replay_unavailable" });
       const { data, error } = await admin.rpc("hosted_proxy_read_websocket_events", {
         requested_owner_id: ownerId, requested_spool_id: operation.spoolId, requested_after_cursor: operation.afterCursor,
       });
-      return error ? json(503, { error: "proxy_storage_unavailable" }) : json(200, { events: data ?? [] });
+      return error ? json(503, { error: "proxy_storage_unavailable" }) : json(200, {
+        events: data ?? [],
+        next_cursor: spoolStatus.next_cursor,
+        terminal_cursor: typeof spoolStatus.terminal_cursor === "number" ? spoolStatus.terminal_cursor : null,
+      });
     }
 
     let payload: unknown;
