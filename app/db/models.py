@@ -1332,7 +1332,7 @@ class OpenCodeGoUsageSample(Base):
     captured_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, index=True)
 
     __table_args__ = (
-        CheckConstraint("window IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
+        CheckConstraint("\"window\" IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
         CheckConstraint(
             "remaining_percent >= 0 AND remaining_percent <= 100",
             name="ck_opencode_go_usage_remaining_percent",

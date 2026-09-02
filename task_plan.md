@@ -116,6 +116,7 @@ Phase 17 — Hosted Vercel/Supabase production hardening
 - [x] Preserve Vercel/Supabase-only read-model boundary and deploy staged WebSocket relay compatibility.
 - [x] Push hosted changes to GitHub and verify production health plus controlled native response/cancellation flows.
 - [x] Resolve locally reproducible GitHub Actions lint/type failures; focused Python regressions now pass (43 passed, 2 Windows-only POSIX skips).
+- [x] Fix PostgreSQL reserved-word migration failure, restore Linux executable script modes, and repair legacy revision remapping against an already-current schema.
 - [ ] Push the CI hardening commit and verify the new GitHub Actions run, including the PostgreSQL migration job.
 - [ ] Run 740 x 360 landscape device/browser proof; explicitly retain any advanced WebSocket-parity limitation.
 - **Status:** in_progress
@@ -160,3 +161,4 @@ Phase 17 — Hosted Vercel/Supabase production hardening
 | Backend Ruff invoked from `frontend/` | 1 | The relative backend paths were absent; reran the identical check from the project root successfully. |
 | Phase-17 plan patch used stale context | 1 | Retargeted the patch to the current task-plan anchors. |
 | Repository lint/type gates failed | 1 | Fixed mechanical Ruff findings, typed monitor client seams structurally, made smoke cleanup portable, and retained POSIX fork coverage only where supported. |
+| GitHub did not expose failed-job logs while the CI run was still active | 1 | Recorded job ids `100277508561` and `100277508746`; wait for the run to complete before inspecting logs. |

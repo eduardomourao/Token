@@ -33,7 +33,7 @@ def upgrade() -> None:
         sa.Column("remaining_percent", sa.Float(), nullable=False),
         sa.Column("resets_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("captured_at", sa.DateTime(), nullable=False),
-        sa.CheckConstraint("window IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
+        sa.CheckConstraint("\"window\" IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
         sa.CheckConstraint(
             "remaining_percent >= 0 AND remaining_percent <= 100",
             name="ck_opencode_go_usage_remaining_percent",

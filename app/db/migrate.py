@@ -729,9 +729,17 @@ def _run_upgrade_locked(
             config.attributes["codex_lb_fresh_install"] = False
 
     _ensure_alembic_version_table_capacity(config)
+    remapped_legacy_revisions = ()
     if auto_remap_legacy_revisions:
-        _remap_legacy_alembic_revisions(config)
-    command.upgrade(config, revision)
+        remapped_legacy_revisions = _remap_legacy_alembic_revisions(config)
+
+    if remapped_legacy_revisions and revision == "head" and not check_schema_drift(database_url):
+        # A legacy revision id can be repaired on a database whose schema was
+        # already fully migrated before its version marker was corrupted. Do
+        # not replay historical DDL in that case: stamp the verified head.
+        command.stamp(config, revision)
+    else:
+        command.upgrade(config, revision)
 
     sync_database_url = _required_sqlalchemy_url(config)
     current_revision = _read_current_revision(sync_database_url)
