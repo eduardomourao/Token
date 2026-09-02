@@ -176,7 +176,8 @@
   `model-source-routing` (ausência de `## Purpose`).
 - Criado o adaptador puro com testes vermelho-verde: `response.create` legado
   sem `stream` passa a SSE, SSE fragmentado somente emite JSON completo e
-  frames inválidos/cancelamento não chegam ao relay.
+  frames inválidos não chegam ao relay; frames válidos não-create mantêm o
+  no-op do servidor legado.
 - Publicada a pré-validação de WebSocket na Edge Function `proxy-responses`.
   A chamada sem Bearer contra produção retornou `401 unauthorized`; nenhuma
   credencial foi criada ou exibida.

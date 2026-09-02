@@ -44,14 +44,14 @@ test("preserves legacy WebSocket create frames that omit stream by requesting SS
   });
 });
 
-test("rejects a malformed or unsupported client frame before an upstream relay can run", () => {
+test("rejects malformed frames but preserves the legacy no-op behavior for non-create frames", () => {
   expect(parseHostedResponseCreate("not json")).toEqual({
     ok: false,
     error: "invalid_client_frame",
   });
   expect(parseHostedResponseCreate(JSON.stringify({ type: "response.cancel", response_id: "resp_1" }))).toEqual({
     ok: false,
-    error: "unsupported_client_frame",
+    error: "ignored_client_frame",
   });
   expect(parseHostedResponseCreate(JSON.stringify({ type: "response.create", model: "gpt-5.4" }))).toEqual({
     ok: false,

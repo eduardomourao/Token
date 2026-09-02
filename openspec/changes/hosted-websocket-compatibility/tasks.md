@@ -10,7 +10,8 @@
       equivalent client transport.
 - [x] 1.3 Add red/green tests for the pure gateway boundary: exactly one
       supported client create frame, fragmented SSE parsing, terminal event
-      detection and safe rejection of invalid/cancel frames.
+      detection, malformed-frame rejection and legacy no-op handling for
+      non-create frames.
 
 ## 2. Isolated upgrade proof
 

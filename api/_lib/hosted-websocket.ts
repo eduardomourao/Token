@@ -2,7 +2,7 @@ export const HOSTED_WEBSOCKET_MAX_FRAME_BYTES = 256 * 1024;
 
 type HostedResponseCreateResult =
   | { ok: true; payload: Record<string, unknown> }
-  | { ok: false; error: "invalid_client_frame" | "unsupported_client_frame" };
+  | { ok: false; error: "invalid_client_frame" | "ignored_client_frame" };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -21,7 +21,7 @@ export function parseHostedResponseCreate(frame: string): HostedResponseCreateRe
   }
 
   if (!isRecord(parsed)) return { ok: false, error: "invalid_client_frame" };
-  if (parsed.type !== "response.create") return { ok: false, error: "unsupported_client_frame" };
+  if (parsed.type !== "response.create") return { ok: false, error: "ignored_client_frame" };
   if (typeof parsed.model !== "string" || parsed.model.length === 0 || !("input" in parsed)) {
     return { ok: false, error: "invalid_client_frame" };
   }

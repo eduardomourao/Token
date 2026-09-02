@@ -36,8 +36,10 @@ only supported, bounded JSON client frames. It MUST map a valid
 `response.create` frame to the existing authenticated HTTP/SSE Responses relay
 without exposing provider credentials, and MUST emit complete SSE `data:`
 records as individual JSON Responses frames in their original order. Invalid,
-oversized, unsupported or malformed frames MUST receive one credential-safe
-terminal error or close and MUST NOT be forwarded upstream.
+oversized or malformed frames MUST receive one credential-safe protocol error
+and MUST NOT be forwarded upstream. A syntactically valid non-create frame
+MUST retain the legacy Responses socket's no-op behavior and MUST NOT be
+forwarded upstream.
 
 #### Scenario: fragmented SSE stream reaches the client
 
@@ -48,10 +50,10 @@ terminal error or close and MUST NOT be forwarded upstream.
 - **AND** after the record delimiter arrives it emits exactly one corresponding
   JSON WebSocket message in order
 
-#### Scenario: gateway receives an unsupported client frame
+#### Scenario: gateway receives a non-create client frame
 
-- **WHEN** an upgraded client sends an unsupported or malformed frame
-- **THEN** the gateway returns one safe terminal protocol result
+- **WHEN** an upgraded client sends a syntactically valid non-create frame
+- **THEN** the gateway preserves the legacy no-op behavior
 - **AND** it does not invoke the HTTP/SSE relay or create a durable spool row
 
 ### Requirement: Hosted reconnect uses durable owner-scoped replay state
