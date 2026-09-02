@@ -73,7 +73,7 @@ Fase 1 — descoberta, backup e definição de escopo.
 
 ## Escopo restante do proxy
 
-O primeiro vertical hospedado cobre `POST /v1/responses` autenticado, resposta JSON concluída e SSE, com seleção por quota, cooldown de rate limit, renovação OAuth, uma tentativa de failover pré-saída e afinidade opcional por hash de sessão. WebSocket, replay/resume, API keys, arquivos, imagens, áudio, model sources e as demais rotas ainda exigem tickets próprios com testes de compatibilidade. O runtime FastAPI e o snapshot externo permanecem o rollback desses contratos.
+O primeiro vertical hospedado cobre `POST /v1/responses` autenticado, resposta JSON concluída e SSE, com seleção por quota, cooldown de rate limit, renovação OAuth, uma tentativa de failover pré-saída, afinidade opcional por hash de sessão e API keys hospedadas para Responses. WebSocket, replay/resume, arquivos, imagens, áudio, model sources e as demais rotas ainda exigem tickets próprios com testes de compatibilidade. O runtime FastAPI e o snapshot externo permanecem o rollback desses contratos.
 
 ## Retomada em 2026-09-01
 

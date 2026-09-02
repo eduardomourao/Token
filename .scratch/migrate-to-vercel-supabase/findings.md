@@ -67,3 +67,9 @@
 - A fonte SQLite ativa foi consultada com URI `mode=ro`: `api_keys_total=0` e `active=0`. Não há chave legada a copiar, recriptografar ou exibir.
 - O runtime legado gera `sk-clb-<token_urlsafe(32)>`, guarda SHA-256 e expõe somente o prefixo persistido. A função hospedada deve manter o mesmo limite de segredo: chave completa somente na resposta de criação, hash privado para autenticação.
 - O endpoint hospedado atual aceita somente JWT Supabase; o próximo vertical deve validar Bearer API key no serviço, resolver o owner por RPC privada e remover `Authorization` antes do upstream.
+
+## WebSocket e replay hospedados — 2026-09-02
+
+- O proxy legado tem WebSockets stateful com replay/resume, sessões, recuperação e backpressure; uma rota WebSocket simples não demonstra paridade.
+- A documentação oficial do Supabase descreve Realtime Broadcast/replay e seu protocolo Phoenix. Ele é útil como transporte próprio, mas não aceita sem adaptação o protocolo OpenAI do cliente legado.
+- A documentação oficial da Vercel aponta suporte recente a WebSocket, mas ressalta que conexões futuras não são garantidas na mesma Function e recomenda estado durável externo. Antes de mover o endpoint legado é necessário provar um gateway de protocolo e recuperação em condições de desconexão.

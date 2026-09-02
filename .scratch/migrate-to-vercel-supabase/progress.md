@@ -141,3 +141,7 @@
 - A função `proxy-api-keys` exige JWT Supabase para criar, listar e revogar. Uma chave nova `sk-clb-…` é devolvida apenas na resposta de criação; a página hospedada `/api-keys` mostra essa resposta uma única vez e permite revogação.
 - `proxy-responses` agora aceita Bearer JWT ou Bearer API key. O Bearer é removido antes de chamar upstream; uma chave só é autenticada pelo hash privado e marca o último uso. Validações: 12 testes Bun, 8 testes Python, 2 testes Vitest focados, typecheck e build passaram.
 - Uma chave sintética temporária comprovou o caminho real sem gastar quota: `POST proxy-responses` com JSON propositalmente inválido retornou HTTP 400 (não 401), e o registro foi removido no mesmo fluxo; a consulta remota confirmou zero registros sintéticos restantes. Nenhum segredo foi exibido.
+
+## 2026-09-02 — descoberta de WebSocket/replay
+
+- O inventário do runtime legado e a documentação oficial confirmam que WebSocket/replay não podem ser rebatizados como Supabase Realtime: o serviço Supabase fala Phoenix, enquanto clientes atuais usam o protocolo OpenAI; a Vercel não garante que conexões posteriores compartilhem a mesma Function. O ticket 16 documenta a prova de gateway exigida. HTTP/SSE continua o contrato hospedado de inferência comprovado.
