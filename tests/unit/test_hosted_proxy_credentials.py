@@ -10,6 +10,7 @@ ROUTING_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "2026090121300
 USAGE_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901214500_hosted_proxy_usage_refresh.sql"
 OAUTH_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901220000_hosted_proxy_oauth_refresh.sql"
 RATE_LIMIT_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902000000_hosted_proxy_rate_limit_status.sql"
+SESSION_AFFINITY_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902003000_hosted_proxy_session_affinity.sql"
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -96,3 +97,15 @@ def test_hosted_proxy_rate_limit_transition_is_service_role_only() -> None:
     assert "add column reset_at bigint" in sql
     assert "create function public.hosted_proxy_recover_expired_rate_limits" in sql
     assert "reset_at <= extract(epoch from now())::bigint" in sql
+
+
+def test_hosted_proxy_session_affinity_is_private_and_hash_only() -> None:
+    sql = SESSION_AFFINITY_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create table app.hosted_proxy_session_affinity" in sql
+    assert "session_key_hash text" in sql
+    assert "length(session_key_hash) = 64" in sql
+    assert "force row level security" in sql
+    assert "create function public.hosted_proxy_session_account" in sql
+    assert "create function public.hosted_proxy_bind_session" in sql
+    assert "revoke all on function public.hosted_proxy_session_account(uuid, text), public.hosted_proxy_bind_session(uuid, text, text) from public, anon, authenticated" in sql

@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, validateResponsePayload } from "./proxy.ts";
+import { buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, sessionKeyHash, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -109,10 +109,20 @@ export default {
     const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { error: recoveryError } = await admin.rpc("hosted_proxy_recover_expired_rate_limits", { requested_owner_id: ownerId });
     if (recoveryError) return json(503, { error: "proxy_storage_unavailable" });
-    const { data: accounts, error: accountError } = await admin
-      .rpc("hosted_proxy_select_account", { requested_owner_id: ownerId });
-    const account = Array.isArray(accounts) ? accounts[0] as HostedProxyAccount | undefined : undefined;
-    if (accountError) return json(503, { error: "proxy_storage_unavailable" });
+    const affinityKey = await sessionKeyHash(request.headers.get("x-codex-session-id"));
+    const affinityResult = affinityKey
+      ? await admin.rpc("hosted_proxy_session_account", { requested_owner_id: ownerId, requested_session_key_hash: affinityKey })
+      : { data: null, error: null };
+    let account = Array.isArray(affinityResult.data) ? affinityResult.data[0] as HostedProxyAccount | undefined : undefined;
+    if (affinityResult.error) return json(503, { error: "proxy_storage_unavailable" });
+    if (!account) {
+      const { data: accounts, error: accountError } = await admin.rpc("hosted_proxy_select_account", { requested_owner_id: ownerId });
+      account = Array.isArray(accounts) ? accounts[0] as HostedProxyAccount | undefined : undefined;
+      if (accountError) return json(503, { error: "proxy_storage_unavailable" });
+      if (account && affinityKey) await admin.rpc("hosted_proxy_bind_session", {
+        requested_owner_id: ownerId, requested_session_key_hash: affinityKey, requested_legacy_account_id: account.legacy_account_id,
+      });
+    }
     if (!account) return json(409, { error: "no_active_proxy_account" });
 
     const { data: credentialsRows, error: credentialsError } = await admin

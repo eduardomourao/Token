@@ -98,3 +98,9 @@ export function retryAfterDeadline(retryAfter: string | null, nowEpoch = Math.fl
 export function mayFailoverBeforeVisibleOutput(payload: Record<string, unknown>, upstreamStatus: number): boolean {
   return payload.stream !== true && upstreamStatus === 429;
 }
+
+export async function sessionKeyHash(sessionId: string | null): Promise<string | null> {
+  if (!sessionId || sessionId.length > 512) return null;
+  const digest = await crypto.subtle.digest("SHA-256", textEncoder.encode(sessionId));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}

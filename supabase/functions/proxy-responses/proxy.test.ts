@@ -7,6 +7,7 @@ import {
   mayFailoverBeforeVisibleOutput,
   parseCompletedResponse,
   retryAfterDeadline,
+  sessionKeyHash,
 } from "./proxy.ts";
 
 const textEncoder = new TextEncoder();
@@ -77,4 +78,10 @@ test("mayFailoverBeforeVisibleOutput excludes streaming and non-rate-limit failu
   expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x" }, 429)).toBeTrue();
   expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x", stream: true }, 429)).toBeFalse();
   expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x" }, 502)).toBeFalse();
+});
+
+test("sessionKeyHash hashes accepted session ids and rejects oversized or missing values", async () => {
+  await expect(sessionKeyHash("session-1")).resolves.toBe("84097828fc31a8c8d29210df48901a85de7fd013f686b17be77d1be29cb7a98b");
+  await expect(sessionKeyHash(null)).resolves.toBeNull();
+  await expect(sessionKeyHash("x".repeat(513))).resolves.toBeNull();
 });

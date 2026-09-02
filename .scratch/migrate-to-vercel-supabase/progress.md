@@ -115,3 +115,9 @@
 
 - `proxy-responses` agora faz uma única tentativa de fallback apenas para Requests JSON que receberam HTTP 429 antes de produzir uma resposta. Primeiro persiste o cooldown, seleciona outra conta pelo seletor privado e repete a chamada uma vez; se a segunda também devolver 429, grava o segundo cooldown e encerra.
 - O caminho `stream: true` é explicitamente excluído para não repetir SSE já potencialmente observável. As validações concluíram com 9 testes Bun e 6 testes Python antes da publicação da função.
+
+## 2026-09-02 — afinidade de sessão hospedada (em validação)
+
+- A afinidade foi retomada após interrupção de contexto. O teste inicial do hash SHA-256 falhou porque o valor esperado do fixture estava incorreto; a implementação calculou `84097828...` para a entrada sintética. A expectativa foi corrigida antes de repetir a suíte. Nenhum dado de sessão real foi persistido ou mostrado.
+- A suíte final aprovou 10 testes Bun e 7 testes Python. A migration `20260902003000_hosted_proxy_session_affinity.sql` foi aplicada ao projeto isolado e `proxy-responses` foi publicado como versão 8, com estado `ACTIVE`; `supabase migration list --linked` confirmou a paridade local/remota.
+- A revisão Matt formal ficou bloqueada porque o ambiente ainda não tem provedor de subagentes configurado; a inspeção manual permaneceu limitada ao ticket 13, ao diff e às suítes focadas. `code-review-graph` foi deliberadamente ignorado por autorização do usuário.
