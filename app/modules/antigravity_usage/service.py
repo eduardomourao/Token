@@ -2,15 +2,20 @@ from __future__ import annotations
 
 # ruff: noqa: E501
 import asyncio
+from typing import Protocol
 
 from app.core.crypto import TokenEncryptor
 from app.core.utils.time import utcnow
 from app.db.models import AntigravityUsageSample
-from app.modules.antigravity_usage.client import AntigravityUsageClient, AntigravityUsageError
+from app.modules.antigravity_usage.client import AntigravityUsageClient, AntigravityUsageError, AntigravityUsageWindow
 from app.modules.antigravity_usage.repository import AntigravityUsageRepository
 from app.modules.antigravity_usage.schemas import AntigravityUsageMonitorResponse, AntigravityUsageWindowResponse
 
 _refresh_lock = asyncio.Lock()
+
+
+class AntigravityUsageFetcher(Protocol):
+    async def fetch(self, refresh_token: str) -> list[AntigravityUsageWindow]: ...
 
 
 class AntigravityUsageNotConfiguredError(ValueError):
@@ -26,7 +31,7 @@ class AntigravityUsageService:
         self,
         repository: AntigravityUsageRepository,
         *,
-        client: AntigravityUsageClient | None = None,
+        client: AntigravityUsageFetcher | None = None,
         encryptor: TokenEncryptor | None = None,
     ) -> None:
         self._repository = repository

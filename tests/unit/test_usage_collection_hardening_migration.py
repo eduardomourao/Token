@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901190000_harden_usage_collection_claims.sql"
 

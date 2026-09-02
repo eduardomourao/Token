@@ -88,11 +88,12 @@ async def test_google_cli_services_encrypt_credentials_and_preserve_last_success
         antigravity = AntigravityUsageService(AntigravityUsageRepository(session), client=_AntigravityClient())
         assert (await gemini.configure("gemini-secret")).windows[0].used_percent == 25
         assert (await antigravity.configure("antigravity-secret")).windows[0].used_percent == 35
-        assert b"gemini-secret" not in (await GeminiUsageRepository(session).get_monitor()).refresh_token_encrypted
-        assert (
-            b"antigravity-secret"
-            not in (await AntigravityUsageRepository(session).get_monitor()).refresh_token_encrypted
-        )
+        gemini_monitor = await GeminiUsageRepository(session).get_monitor()
+        assert gemini_monitor is not None
+        assert b"gemini-secret" not in gemini_monitor.refresh_token_encrypted
+        antigravity_monitor = await AntigravityUsageRepository(session).get_monitor()
+        assert antigravity_monitor is not None
+        assert b"antigravity-secret" not in antigravity_monitor.refresh_token_encrypted
 
 
 @pytest.mark.asyncio

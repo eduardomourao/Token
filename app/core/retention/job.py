@@ -95,20 +95,18 @@ async def _prune_opencode_go_usage_samples(cutoff: datetime) -> int:
                 delete(OpenCodeGoUsageSample).where(OpenCodeGoUsageSample.captured_at < cutoff)
             )
             await session.commit()
-            return int(result.rowcount or 0)
+            return int(getattr(result, "rowcount", 0) or 0)
 
 
 async def _prune_google_cli_usage_samples(cutoff: datetime) -> int:
     async with get_background_session() as session:
         async with sqlite_writer_section():
-            gemini = await session.execute(
-                delete(GeminiUsageSample).where(GeminiUsageSample.captured_at < cutoff)
-            )
+            gemini = await session.execute(delete(GeminiUsageSample).where(GeminiUsageSample.captured_at < cutoff))
             antigravity = await session.execute(
                 delete(AntigravityUsageSample).where(AntigravityUsageSample.captured_at < cutoff)
             )
             await session.commit()
-            return int(gemini.rowcount or 0) + int(antigravity.rowcount or 0)
+            return int(getattr(gemini, "rowcount", 0) or 0) + int(getattr(antigravity, "rowcount", 0) or 0)
 
 
 async def _prune_request_logs(cutoff: datetime, *, now: datetime) -> int:

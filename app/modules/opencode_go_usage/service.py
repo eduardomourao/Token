@@ -4,16 +4,21 @@ import asyncio
 import csv
 import io
 from datetime import timedelta
+from typing import Protocol
 
 from app.core.crypto import TokenEncryptor
 from app.core.utils.time import utcnow
 from app.db.models import OpenCodeGoUsageSample
-from app.modules.opencode_go_usage.client import OpenCodeGoUsageClient, OpenCodeGoUsageError
+from app.modules.opencode_go_usage.client import OpenCodeGoUsageClient, OpenCodeGoUsageError, OpenCodeGoUsageWindow
 from app.modules.opencode_go_usage.repository import OpenCodeGoUsageRepository
 from app.modules.opencode_go_usage.schemas import OpenCodeGoUsageMonitorResponse, OpenCodeGoUsageWindowResponse
 
 _refresh_lock = asyncio.Lock()
 _RETENTION_DAYS = 90
+
+
+class OpenCodeGoUsageFetcher(Protocol):
+    async def fetch(self, api_key: str) -> list[OpenCodeGoUsageWindow]: ...
 
 
 class OpenCodeGoUsageNotConfiguredError(ValueError):
@@ -29,7 +34,7 @@ class OpenCodeGoUsageService:
         self,
         repository: OpenCodeGoUsageRepository,
         *,
-        client: OpenCodeGoUsageClient | None = None,
+        client: OpenCodeGoUsageFetcher | None = None,
         encryptor: TokenEncryptor | None = None,
     ) -> None:
         self._repository = repository

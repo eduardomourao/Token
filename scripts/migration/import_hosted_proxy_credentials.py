@@ -23,7 +23,6 @@ from urllib.request import Request, urlopen
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-
 DEFAULT_SQLITE_PATH = Path.home() / ".codex-lb" / "store.db"
 DEFAULT_SOURCE_KEY_PATH = Path.home() / ".codex-lb" / "encryption.key"
 CHUNK_SIZE = 500
@@ -63,7 +62,10 @@ def derive_hosted_credential_key(source_fernet_key: bytes) -> str:
 def _encrypt(plaintext: str, key: bytes) -> str:
     nonce = os.urandom(12)
     ciphertext = AESGCM(key).encrypt(nonce, plaintext.encode(), None)
-    encode = lambda value: base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
+    def encode(value: bytes) -> str:
+        return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+
     return f"v1.{encode(nonce)}.{encode(ciphertext)}"
 
 
@@ -93,26 +95,34 @@ def read_hosted_proxy_credentials(
         accounts: list[dict[str, Any]] = []
         credentials: list[dict[str, Any]] = []
         for row in _read_rows(connection):
-            accounts.append({
-                "owner_id": owner_id,
-                "legacy_account_id": row["id"],
-                "chatgpt_account_id": row["chatgpt_account_id"],
-                "codex_installation_id": row["codex_installation_id"],
-                "email": row["email"],
-                "plan_type": row["plan_type"],
-                "routing_policy": row["routing_policy"],
-                "status": row["status"],
-                "last_refresh_at": normalize_timestamp(row["last_refresh"]),
-                "created_at": normalize_timestamp(row["created_at"]),
-            })
-            credentials.append({
-                "owner_id": owner_id,
-                "legacy_account_id": row["id"],
-                "credential_version": "v1",
-                "access_token_ciphertext": _encrypt(fernet.decrypt(row["access_token_encrypted"]).decode(), hosted_key),
-                "refresh_token_ciphertext": _encrypt(fernet.decrypt(row["refresh_token_encrypted"]).decode(), hosted_key),
-                "id_token_ciphertext": _encrypt(fernet.decrypt(row["id_token_encrypted"]).decode(), hosted_key),
-            })
+            accounts.append(
+                {
+                    "owner_id": owner_id,
+                    "legacy_account_id": row["id"],
+                    "chatgpt_account_id": row["chatgpt_account_id"],
+                    "codex_installation_id": row["codex_installation_id"],
+                    "email": row["email"],
+                    "plan_type": row["plan_type"],
+                    "routing_policy": row["routing_policy"],
+                    "status": row["status"],
+                    "last_refresh_at": normalize_timestamp(row["last_refresh"]),
+                    "created_at": normalize_timestamp(row["created_at"]),
+                }
+            )
+            credentials.append(
+                {
+                    "owner_id": owner_id,
+                    "legacy_account_id": row["id"],
+                    "credential_version": "v1",
+                    "access_token_ciphertext": _encrypt(
+                        fernet.decrypt(row["access_token_encrypted"]).decode(), hosted_key
+                    ),
+                    "refresh_token_ciphertext": _encrypt(
+                        fernet.decrypt(row["refresh_token_encrypted"]).decode(), hosted_key
+                    ),
+                    "id_token_ciphertext": _encrypt(fernet.decrypt(row["id_token_encrypted"]).decode(), hosted_key),
+                }
+            )
     finally:
         connection.close()
     return HostedProxyCredentials(accounts=accounts, credentials=credentials)
@@ -120,7 +130,7 @@ def read_hosted_proxy_credentials(
 
 def _batches(records: list[dict[str, Any]]) -> Iterable[list[dict[str, Any]]]:
     for index in range(0, len(records), CHUNK_SIZE):
-        yield records[index:index + CHUNK_SIZE]
+        yield records[index : index + CHUNK_SIZE]
 
 
 def upsert_private_records(
@@ -147,10 +157,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--source", type=Path, default=DEFAULT_SQLITE_PATH)
     parser.add_argument("--source-encryption-key-file", type=Path, default=DEFAULT_SOURCE_KEY_PATH)
     parser.add_argument("--owner-id", required=True)
-    parser.add_argument("--hosted-credential-key", default=os.getenv("HOSTED_PROXY_CREDENTIAL_KEY"), help="optional base64url 32-byte override; defaults to a purpose-bound derivation of the source key")
+    parser.add_argument(
+        "--hosted-credential-key",
+        default=os.getenv("HOSTED_PROXY_CREDENTIAL_KEY"),
+        help=("optional base64url 32-byte override; defaults to a purpose-bound derivation of the source key"),
+    )
     parser.add_argument("--supabase-url", default=os.getenv("SUPABASE_URL"))
     parser.add_argument("--service-role-key", default=os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
-    parser.add_argument("--apply", action="store_true", help="perform private-schema upserts; default only validates and reports counts")
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="perform private-schema upserts; default only validates and reports counts",
+    )
     return parser.parse_args()
 
 
@@ -170,8 +188,18 @@ def main() -> int:
         return 0
     if not args.supabase_url or not args.service_role_key:
         raise SystemExit("--supabase-url and --service-role-key are required with --apply")
-    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_upsert_accounts", model.accounts)
-    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_upsert_credentials", model.credentials)
+    upsert_private_records(
+        args.supabase_url,
+        args.service_role_key,
+        "hosted_proxy_upsert_accounts",
+        model.accounts,
+    )
+    upsert_private_records(
+        args.supabase_url,
+        args.service_role_key,
+        "hosted_proxy_upsert_credentials",
+        model.credentials,
+    )
     print(json.dumps(counts, sort_keys=True))
     return 0
 

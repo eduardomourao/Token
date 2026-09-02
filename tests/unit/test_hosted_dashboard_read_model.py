@@ -5,7 +5,6 @@ import sqlite3
 import sys
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901200000_hosted_dashboard_read_model.sql"
 IMPORTER = REPOSITORY_ROOT / "scripts" / "migration" / "import_hosted_dashboard_read_model.py"
@@ -90,7 +89,24 @@ def test_importer_emits_only_non_secret_account_fields_and_normalizes_timestamps
     )
     connection.execute(
         "insert into accounts values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        ("account-a", "operator@example.com", "Primary", None, None, None, "pro", "normal", "active", None, None, "2026-09-01 10:00:00", "2026-08-01 10:00:00", b"access", b"refresh", b"id"),
+        (
+            "account-a",
+            "operator@example.com",
+            "Primary",
+            None,
+            None,
+            None,
+            "pro",
+            "normal",
+            "active",
+            None,
+            None,
+            "2026-09-01 10:00:00",
+            "2026-08-01 10:00:00",
+            b"access",
+            b"refresh",
+            b"id",
+        ),
     )
     connection.execute(
         "insert into usage_history values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -106,22 +122,24 @@ def test_importer_emits_only_non_secret_account_fields_and_normalizes_timestamps
     importer = _load_importer()
     payload = importer.read_dashboard_read_model(source, "00000000-0000-0000-0000-000000000001")
 
-    assert payload.accounts == [{
-        "owner_id": "00000000-0000-0000-0000-000000000001",
-        "legacy_account_id": "account-a",
-        "email": "operator@example.com",
-        "alias": "Primary",
-        "workspace_id": None,
-        "workspace_label": None,
-        "seat_type": None,
-        "plan_type": "pro",
-        "routing_policy": "normal",
-        "status": "active",
-        "reset_at": None,
-        "blocked_at": None,
-        "last_refresh_at": "2026-09-01T10:00:00+00:00",
-        "created_at": "2026-08-01T10:00:00+00:00",
-    }]
+    assert payload.accounts == [
+        {
+            "owner_id": "00000000-0000-0000-0000-000000000001",
+            "legacy_account_id": "account-a",
+            "email": "operator@example.com",
+            "alias": "Primary",
+            "workspace_id": None,
+            "workspace_label": None,
+            "seat_type": None,
+            "plan_type": "pro",
+            "routing_policy": "normal",
+            "status": "active",
+            "reset_at": None,
+            "blocked_at": None,
+            "last_refresh_at": "2026-09-01T10:00:00+00:00",
+            "created_at": "2026-08-01T10:00:00+00:00",
+        }
+    ]
     assert payload.usage_history[0]["source_id"] == 17
     assert payload.usage_history[0]["recorded_at"] == "2026-09-01T10:00:00+00:00"
     assert payload.additional_usage_history[0]["source_id"] == 19

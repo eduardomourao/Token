@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 import pytest
 from pydantic import ValidationError
 from sqlalchemy.dialects import postgresql, sqlite
@@ -120,6 +122,7 @@ def test_process_suffix_is_stable_within_one_process() -> None:
     assert default_refresh_claimant_id() == default_refresh_claimant_id()
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="requires POSIX fork semantics")
 def test_forked_children_get_distinct_claimant_ids_after_preload() -> None:
     """Regression: the per-process suffix was frozen at module import, so in a
     pre-fork deployment (module preloaded in the parent before workers fork)
@@ -139,7 +142,8 @@ def test_forked_children_get_distinct_claimant_ids_after_preload() -> None:
 
     def _child_claimant_id() -> str:
         read_fd, write_fd = os.pipe()
-        pid = os.fork()
+        fork = getattr(os, "fork")
+        pid = fork()
         if pid == 0:  # pragma: no cover - runs in the forked child
             os.close(read_fd)
             try:
@@ -176,6 +180,7 @@ def test_forked_children_get_distinct_claimant_ids_after_preload() -> None:
     assert len(composed) == 3
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="requires POSIX fork semantics")
 def test_process_default_coordinator_yields_distinct_claimants_across_fork() -> None:
     """Regression: the process-default coordinator froze its claimant id at
     construction. In a pre-fork deployment the coordinator is built during
@@ -219,7 +224,8 @@ def test_process_default_coordinator_yields_distinct_claimants_across_fork() -> 
 
         def _child_ids() -> tuple[str, str]:
             read_fd, write_fd = os.pipe()
-            pid = os.fork()
+            fork = getattr(os, "fork")
+            pid = fork()
             if pid == 0:  # pragma: no cover - runs in the forked child
                 os.close(read_fd)
                 try:

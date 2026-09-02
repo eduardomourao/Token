@@ -87,6 +87,13 @@
 
 ## Verification Review
 
+## Hosted Production Hardening (2026-09-02)
+
+- GitHub Actions exposed repository-wide lint and type gates that had not been clean on this branch. Ruff errors were mechanical formatting/import/lambda issues across migrations, hosted import scripts, and migration-contract tests; `ruff check .` now passes.
+- `ty check` identified SQLAlchemy's broad `Result` typing, Windows-incompatible POSIX process APIs, and monitor services typed against concrete HTTP clients despite test-double seams. Cleanup now safely reads `rowcount` through a runtime-safe accessor, the smoke cleanup uses process-group handling only where supported, and services depend on small fetcher protocols.
+- Focused regression command completed: 43 tests passed and 2 POSIX-only fork tests were skipped on Windows. The skip is platform-scoped; Linux CI still executes those fork tests.
+- Advanced hosted WebSocket parity remains deliberately limited to the documented staged adapter. Native multiplexing/reconnect/capability continuity is not claimed.
+
 - Static Standards check: the implementation keeps monitor code isolated from `Account` and `ModelSource` routing; encrypted credentials stay server-only; API response schemas have no credential field; external failures preserve successful samples.
 - Static Spec check: the new monitor follows the requested three windows, 120-second leader-gated refresh, 90-day retained export history, authenticated read/write separation, audit actions, and dashboard/settings scope without adding charts or navigation.
 - Formal Matt Standards/Spec diff review is blocked because this source extraction has no `.git` repository or fixed point.

@@ -90,13 +90,22 @@ def _stop_server(server: subprocess.Popen[bytes]) -> None:
     if server.poll() is not None:
         return
     try:
-        os.killpg(server.pid, signal.SIGTERM)
+        kill_process_group = getattr(os, "killpg", None)
+        if kill_process_group is None:
+            server.terminate()
+        else:
+            kill_process_group(server.pid, signal.SIGTERM)
     except ProcessLookupError:
         return
     try:
         server.wait(timeout=SHUTDOWN_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
-        os.killpg(server.pid, signal.SIGKILL)
+        kill_process_group = getattr(os, "killpg", None)
+        kill_signal = getattr(signal, "SIGKILL", signal.SIGTERM)
+        if kill_process_group is None:
+            server.kill()
+        else:
+            kill_process_group(server.pid, kill_signal)
         server.wait(timeout=5.0)
 
 

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 BASE_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901170000_schedule_gemini_usage_collection.sql"
 MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901171500_fix_gemini_usage_schedule_net_schema.sql"

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901141751_usage_monitor_gemini_slice.sql"
 
@@ -28,7 +27,7 @@ def test_gemini_monitor_slice_enforces_owner_read_access_and_keeps_credentials_p
     for table in ("usage_monitors", "usage_collections", "usage_snapshots"):
         assert f"alter table public.{table} enable row level security" in sql
         assert f"alter table public.{table} force row level security" in sql
-        assert f"to authenticated" in sql
+        assert "to authenticated" in sql
         assert "(select auth.uid()) = owner_id" in sql
 
     assert "create schema if not exists app" in sql

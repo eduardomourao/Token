@@ -38,7 +38,10 @@ def upgrade() -> None:
         sa.Column("remaining_percent", sa.Float(), nullable=False),
         sa.Column("resets_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("captured_at", sa.DateTime(), nullable=False),
-        sa.CheckConstraint("remaining_percent >= 0 AND remaining_percent <= 100", name="ck_gemini_usage_remaining_percent"),
+        sa.CheckConstraint(
+            "remaining_percent >= 0 AND remaining_percent <= 100",
+            name="ck_gemini_usage_remaining_percent",
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_gemini_usage_sample_captured_at", "gemini_usage_sample", ["captured_at"])
@@ -53,7 +56,10 @@ def upgrade() -> None:
         sa.Column("remaining_percent", sa.Float(), nullable=False),
         sa.Column("resets_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("captured_at", sa.DateTime(), nullable=False),
-        sa.CheckConstraint("remaining_percent >= 0 AND remaining_percent <= 100", name="ck_antigravity_usage_remaining_percent"),
+        sa.CheckConstraint(
+            "remaining_percent >= 0 AND remaining_percent <= 100",
+            name="ck_antigravity_usage_remaining_percent",
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_antigravity_usage_sample_captured_at", "antigravity_usage_sample", ["captured_at"])

@@ -6,7 +6,7 @@ Add a secure, non-routing OpenCode Go limit monitor with persisted history, CSV 
 
 ## Current Phase
 
-Phase 8 — PWA contracts and dependency setup
+Phase 17 — Hosted Vercel/Supabase production hardening
 
 ## Phases
 
@@ -111,6 +111,15 @@ Phase 8 — PWA contracts and dependency setup
 - [x] Record Hallmark and formal review results/blockers.
 - **Status:** complete
 
+### Phase 17: Hosted Vercel/Supabase production hardening
+
+- [x] Preserve Vercel/Supabase-only read-model boundary and deploy staged WebSocket relay compatibility.
+- [x] Push hosted changes to GitHub and verify production health plus controlled native response/cancellation flows.
+- [x] Resolve locally reproducible GitHub Actions lint/type failures; focused Python regressions now pass (43 passed, 2 Windows-only POSIX skips).
+- [ ] Push the CI hardening commit and verify the new GitHub Actions run, including the PostgreSQL migration job.
+- [ ] Run 740 x 360 landscape device/browser proof; explicitly retain any advanced WebSocket-parity limitation.
+- **Status:** in_progress
+
 ## Public test seams
 
 - Backend HTTP client parser for the OpenCode Go usage payload.
@@ -149,3 +158,5 @@ Phase 8 — PWA contracts and dependency setup
 | Matt/diff and code-review-graph need a VCS root | 1 | Checkout is extracted without `.git`; reported as a formal review blocker. |
 | Local server absent after build check | 1 | Restarted `uv run codex-lb`; `/usage-monitor` now returns HTTP 200 on port 2455. |
 | Backend Ruff invoked from `frontend/` | 1 | The relative backend paths were absent; reran the identical check from the project root successfully. |
+| Phase-17 plan patch used stale context | 1 | Retargeted the patch to the current task-plan anchors. |
+| Repository lint/type gates failed | 1 | Fixed mechanical Ruff findings, typed monitor client seams structurally, made smoke cleanup portable, and retained POSIX fork coverage only where supported. |

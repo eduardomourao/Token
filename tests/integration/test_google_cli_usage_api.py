@@ -17,7 +17,9 @@ async def test_google_cli_usage_apis_configure_refresh_and_remove(async_client, 
 
     async def antigravity_fetch(self, refresh_token: str):
         assert refresh_token == "antigravity-refresh"
-        return [AntigravityUsageWindow("gemini", "five_hour", "Gemini Pool", 70, datetime(2030, 1, 1, tzinfo=timezone.utc))]
+        return [
+            AntigravityUsageWindow("gemini", "five_hour", "Gemini Pool", 70, datetime(2030, 1, 1, tzinfo=timezone.utc))
+        ]
 
     monkeypatch.setattr("app.modules.gemini_usage.client.GeminiUsageClient.fetch", gemini_fetch)
     monkeypatch.setattr("app.modules.antigravity_usage.client.AntigravityUsageClient.fetch", antigravity_fetch)
@@ -25,7 +27,9 @@ async def test_google_cli_usage_apis_configure_refresh_and_remove(async_client, 
     assert (await async_client.get("/api/gemini-usage/")).json()["configured"] is False
     assert (await async_client.get("/api/antigravity-usage/")).json()["configured"] is False
     gemini = await async_client.put("/api/gemini-usage/configuration", json={"refreshToken": "gemini-refresh"})
-    antigravity = await async_client.put("/api/antigravity-usage/configuration", json={"refreshToken": "antigravity-refresh"})
+    antigravity = await async_client.put(
+        "/api/antigravity-usage/configuration", json={"refreshToken": "antigravity-refresh"}
+    )
     assert gemini.status_code == 200 and gemini.json()["windows"][0]["window"] == "pro_latest"
     assert antigravity.status_code == 200 and antigravity.json()["windows"][0]["group"] == "gemini"
     assert (await async_client.post("/api/gemini-usage/refresh")).status_code == 200

@@ -18,7 +18,6 @@ from typing import Any, Iterable
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
-
 DEFAULT_SQLITE_PATH = Path.home() / ".codex-lb" / "store.db"
 CHUNK_SIZE = 500
 
@@ -54,50 +53,59 @@ def read_dashboard_read_model(source: Path, owner_id: str) -> DashboardReadModel
     connection = sqlite3.connect(f"file:{source}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
     try:
-        accounts = [{
-            "owner_id": owner_id,
-            "legacy_account_id": row["id"],
-            "email": row["email"],
-            "alias": row["alias"],
-            "workspace_id": row["workspace_id"],
-            "workspace_label": row["workspace_label"],
-            "seat_type": row["seat_type"],
-            "plan_type": row["plan_type"],
-            "routing_policy": row["routing_policy"],
-            "status": row["status"],
-            "reset_at": row["reset_at"],
-            "blocked_at": row["blocked_at"],
-            "last_refresh_at": normalize_timestamp(row["last_refresh"]),
-            "created_at": normalize_timestamp(row["created_at"]),
-        } for row in _read_rows(connection, "accounts")]
-        usage_history = [{
-            "owner_id": owner_id,
-            "source_id": row["id"],
-            "legacy_account_id": row["account_id"],
-            "recorded_at": normalize_timestamp(row["recorded_at"]),
-            "window_key": row["window"],
-            "used_percent": row["used_percent"],
-            "input_tokens": row["input_tokens"],
-            "output_tokens": row["output_tokens"],
-            "reset_at": row["reset_at"],
-            "window_minutes": row["window_minutes"],
-            "credits_has": _as_bool(row["credits_has"]),
-            "credits_unlimited": _as_bool(row["credits_unlimited"]),
-            "credits_balance": row["credits_balance"],
-        } for row in _read_rows(connection, "usage_history")]
-        additional_usage_history = [{
-            "owner_id": owner_id,
-            "source_id": row["id"],
-            "legacy_account_id": row["account_id"],
-            "quota_key": row["quota_key"],
-            "limit_name": row["limit_name"],
-            "metered_feature": row["metered_feature"],
-            "window_key": row["window"],
-            "used_percent": row["used_percent"],
-            "reset_at": row["reset_at"],
-            "window_minutes": row["window_minutes"],
-            "recorded_at": normalize_timestamp(row["recorded_at"]),
-        } for row in _read_rows(connection, "additional_usage_history")]
+        accounts = [
+            {
+                "owner_id": owner_id,
+                "legacy_account_id": row["id"],
+                "email": row["email"],
+                "alias": row["alias"],
+                "workspace_id": row["workspace_id"],
+                "workspace_label": row["workspace_label"],
+                "seat_type": row["seat_type"],
+                "plan_type": row["plan_type"],
+                "routing_policy": row["routing_policy"],
+                "status": row["status"],
+                "reset_at": row["reset_at"],
+                "blocked_at": row["blocked_at"],
+                "last_refresh_at": normalize_timestamp(row["last_refresh"]),
+                "created_at": normalize_timestamp(row["created_at"]),
+            }
+            for row in _read_rows(connection, "accounts")
+        ]
+        usage_history = [
+            {
+                "owner_id": owner_id,
+                "source_id": row["id"],
+                "legacy_account_id": row["account_id"],
+                "recorded_at": normalize_timestamp(row["recorded_at"]),
+                "window_key": row["window"],
+                "used_percent": row["used_percent"],
+                "input_tokens": row["input_tokens"],
+                "output_tokens": row["output_tokens"],
+                "reset_at": row["reset_at"],
+                "window_minutes": row["window_minutes"],
+                "credits_has": _as_bool(row["credits_has"]),
+                "credits_unlimited": _as_bool(row["credits_unlimited"]),
+                "credits_balance": row["credits_balance"],
+            }
+            for row in _read_rows(connection, "usage_history")
+        ]
+        additional_usage_history = [
+            {
+                "owner_id": owner_id,
+                "source_id": row["id"],
+                "legacy_account_id": row["account_id"],
+                "quota_key": row["quota_key"],
+                "limit_name": row["limit_name"],
+                "metered_feature": row["metered_feature"],
+                "window_key": row["window"],
+                "used_percent": row["used_percent"],
+                "reset_at": row["reset_at"],
+                "window_minutes": row["window_minutes"],
+                "recorded_at": normalize_timestamp(row["recorded_at"]),
+            }
+            for row in _read_rows(connection, "additional_usage_history")
+        ]
     finally:
         connection.close()
     return DashboardReadModel(accounts, usage_history, additional_usage_history)
@@ -105,10 +113,16 @@ def read_dashboard_read_model(source: Path, owner_id: str) -> DashboardReadModel
 
 def _batches(records: list[dict[str, Any]]) -> Iterable[list[dict[str, Any]]]:
     for index in range(0, len(records), CHUNK_SIZE):
-        yield records[index:index + CHUNK_SIZE]
+        yield records[index : index + CHUNK_SIZE]
 
 
-def upsert_records(base_url: str, service_role_key: str, table: str, conflict_columns: str, records: list[dict[str, Any]]) -> None:
+def upsert_records(
+    base_url: str,
+    service_role_key: str,
+    table: str,
+    conflict_columns: str,
+    records: list[dict[str, Any]],
+) -> None:
     endpoint = f"{base_url.rstrip('/')}/rest/v1/{table}?on_conflict={quote(conflict_columns, safe=',')}"
     headers = {
         "apikey": service_role_key,
@@ -147,9 +161,16 @@ def main() -> int:
         return 0
     if not args.supabase_url or not args.service_role_key:
         raise SystemExit("--supabase-url and --service-role-key are required with --apply")
-    upsert_records(args.supabase_url, args.service_role_key, "hosted_dashboard_accounts", "owner_id,legacy_account_id", model.accounts)
-    upsert_records(args.supabase_url, args.service_role_key, "hosted_dashboard_usage_history", "owner_id,source_id", model.usage_history)
-    upsert_records(args.supabase_url, args.service_role_key, "hosted_dashboard_additional_usage_history", "owner_id,source_id", model.additional_usage_history)
+    for table, conflict_columns, records in (
+        ("hosted_dashboard_accounts", "owner_id,legacy_account_id", model.accounts),
+        ("hosted_dashboard_usage_history", "owner_id,source_id", model.usage_history),
+        (
+            "hosted_dashboard_additional_usage_history",
+            "owner_id,source_id",
+            model.additional_usage_history,
+        ),
+    ):
+        upsert_records(args.supabase_url, args.service_role_key, table, conflict_columns, records)
     print(json.dumps(counts, sort_keys=True))
     return 0
 

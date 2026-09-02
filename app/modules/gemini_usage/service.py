@@ -2,15 +2,20 @@ from __future__ import annotations
 
 # ruff: noqa: E501
 import asyncio
+from typing import Protocol
 
 from app.core.crypto import TokenEncryptor
 from app.core.utils.time import utcnow
 from app.db.models import GeminiUsageSample
-from app.modules.gemini_usage.client import GeminiUsageClient, GeminiUsageError
+from app.modules.gemini_usage.client import GeminiUsageClient, GeminiUsageError, GeminiUsageWindow
 from app.modules.gemini_usage.repository import GeminiUsageRepository
 from app.modules.gemini_usage.schemas import GeminiUsageMonitorResponse, GeminiUsageWindowResponse
 
 _refresh_lock = asyncio.Lock()
+
+
+class GeminiUsageFetcher(Protocol):
+    async def fetch(self, refresh_token: str) -> list[GeminiUsageWindow]: ...
 
 
 class GeminiUsageNotConfiguredError(ValueError):
@@ -26,7 +31,7 @@ class GeminiUsageService:
         self,
         repository: GeminiUsageRepository,
         *,
-        client: GeminiUsageClient | None = None,
+        client: GeminiUsageFetcher | None = None,
         encryptor: TokenEncryptor | None = None,
     ) -> None:
         self._repository = repository
