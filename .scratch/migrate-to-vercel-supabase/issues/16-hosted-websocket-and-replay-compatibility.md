@@ -19,7 +19,7 @@ declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
 - [~] Provar o gateway com `@vercel/functions` + `ws`: handshake autenticado,
   conversão incremental SSE→frames OpenAI, cancelamento, limite de duração e
   erro terminal seguro.
-- [ ] Provar persistência no Supabase: spool owner-scoped, cursor de replay,
+- [~] Provar persistência no Supabase: spool owner-scoped, cursor de replay,
   retenção, retomada em outra Function e recusa explícita quando uma saída já
   visível não puder ser repetida sem duplicação.
 - [ ] Executar teste ponta a ponta contra deploy Vercel e cliente WebSocket
@@ -53,3 +53,7 @@ deve depender de memória da Function nem do Runtime Cache da Vercel.
 - O `proxy-responses` publicado no projeto `mtokqhqdkkxbyvgjwyvu` reconhece o
   preflight exato somente depois de autenticar JWT ou API key. Um POST sem
   credencial retornou `401 unauthorized`, sem seleção de conta.
+- O banco hospedado agora possui spool privado, curto e owner-scoped, cursor
+  monotônico e leitura somente via RPC `service_role`. RLS está habilitada e
+  forçada nas duas tabelas; a Function ainda não grava eventos, portanto não
+  há replay exposto antes do teste ponta a ponta.

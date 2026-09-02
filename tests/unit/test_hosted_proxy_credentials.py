@@ -12,6 +12,8 @@ OAUTH_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "2026090
 RATE_LIMIT_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902000000_hosted_proxy_rate_limit_status.sql"
 SESSION_AFFINITY_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902003000_hosted_proxy_session_affinity.sql"
 API_KEYS_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902010000_hosted_proxy_api_keys.sql"
+WEBSOCKET_SPOOL_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_hosted_proxy_websocket_spool.sql"))
+WEBSOCKET_SPOOL_FIX_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_fix_hosted_proxy_websocket_spool_cleanup.sql"))
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -85,6 +87,9 @@ def test_hosted_proxy_oauth_rotation_has_private_claim_and_ciphertext_cas() -> N
     assert "refresh_token_ciphertext = expected_refresh_token_ciphertext" in sql
     assert "revoke all on function public.hosted_proxy_claim_refresh" in sql
     assert "to service_role" in sql
+    fix_sql = WEBSOCKET_SPOOL_FIX_MIGRATION.read_text(encoding="utf-8").lower()
+    assert "as stale_spool" in fix_sql
+    assert "as expired_spool" in fix_sql
 
 
 def test_hosted_proxy_rate_limit_transition_is_service_role_only() -> None:
@@ -124,4 +129,21 @@ def test_hosted_proxy_api_keys_are_hash_only_and_service_role_only() -> None:
     assert "set last_used_at = now()" in sql
     assert "create function public.hosted_proxy_create_api_key" in sql
     assert "create function public.hosted_proxy_revoke_api_key" in sql
+    assert "to service_role" in sql
+
+
+def test_hosted_websocket_spool_is_private_owner_scoped_and_bounded() -> None:
+    sql = WEBSOCKET_SPOOL_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create table app.hosted_proxy_websocket_spools" in sql
+    assert "create table app.hosted_proxy_websocket_events" in sql
+    assert "owner_id uuid not null references auth.users" in sql
+    assert "session_key_hash text check (session_key_hash is null or length(session_key_hash) = 64)" in sql
+    assert "event_frame jsonb not null check (jsonb_typeof(event_frame) = 'object')" in sql
+    assert "octet_length(event_frame::text) <= 262144" in sql
+    assert "force row level security" in sql
+    assert "revoke all on table app.hosted_proxy_websocket_spools, app.hosted_proxy_websocket_events from anon, authenticated" in sql
+    assert "create function public.hosted_proxy_append_websocket_event" in sql
+    assert "create function public.hosted_proxy_read_websocket_events" in sql
+    assert "terminal_cursor is null" in sql
     assert "to service_role" in sql

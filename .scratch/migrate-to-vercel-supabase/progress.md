@@ -184,3 +184,16 @@
 - Criada a Function Vercel não nativa `api/hosted-ws-probe.ts`, ainda sem
   deploy GitHub. Ela não substitui `/backend-api/codex/responses` nem
   `/v1/responses`.
+
+## 2026-09-02 — spool WebSocket privado
+
+- Aplicadas as migrações `20260902121608` e `20260902121820` apenas no projeto
+  Supabase `mtokqhqdkkxbyvgjwyvu`. Elas adicionam um spool de no máximo quinze
+  minutos, cursor monotônico e eventos JSON de até 256 KiB, sempre por owner.
+- O primeiro lint detectou uma ambiguidade real na limpeza de spools; ela foi
+  corrigida por migração incremental antes de qualquer Function gravar dados.
+  O lint final não tem erros e a consulta remota confirmou RLS e RLS forçada
+  nas duas tabelas, além das quatro RPCs privadas esperadas.
+- O advisor ainda alerta que a proteção global contra senha vazada está
+  desativada no Auth. É uma configuração global preexistente e deve ser
+  ativada antes de liberar cadastro por senha ao público.
