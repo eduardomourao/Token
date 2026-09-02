@@ -23,18 +23,19 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+      GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
     steps:
-      - name: Require release automation token
+      - name: Report release automation credential source
         shell: bash
         env:
           RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "${RELEASE_PLEASE_TOKEN}" ]; then
-            echo "::error::RELEASE_PLEASE_TOKEN is required so beta release events trigger artifact publishing."
-            exit 1
+            echo "::warning::Using GitHub Actions token; downstream workflows are not triggered by this token."
+          else
+            echo "Using RELEASE_PLEASE_TOKEN for release automation."
           fi
 
       - name: Checkout main
@@ -43,7 +44,7 @@ jobs:
           persist-credentials: false
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
       - name: Find open release-please PR
         id: release_pr

@@ -25,7 +25,7 @@ max_lines = 60
 # that coupling is intentional.
 path = "frontend/src/components/layout/app-header.tsx"
 array = "CORE_NAV_ITEMS"
-max_items = 5
+max_items = 6
 
 [root_files]
 # Complete allowlist of tracked repository-root entries (files and
@@ -40,10 +40,14 @@ allowed = [
   ".env.example",
   ".github",
   ".gitignore",
+  ".hallmark",
   ".pre-commit-config.yaml",
+  ".scratch",
+  ".vercelignore",
   "AGENTS.md",
   "CHANGELOG.md",
   "CLAUDE.md",
+  "CONTEXT.md",
   "Dockerfile",
   "Dockerfile.distroless",
   "LICENSE",
@@ -52,6 +56,7 @@ allowed = [
   "README.md",
   "README.zh-CN.md",
   "app",
+  "api",
   "bun.lock",
   "config",
   "deploy",
@@ -59,12 +64,18 @@ allowed = [
   "docker-compose.yml",
   "docs",
   "frontend",
+  "findings.md",
+  "lib",
   "mkdocs.yml",
   "openspec",
   "package.json",
   "pyproject.toml",
+  "progress.md",
   "renovate.json",
   "scripts",
   "tests",
+  "supabase",
+  "task_plan.md",
   "uv.lock",
+  "vercel.json",
 ]

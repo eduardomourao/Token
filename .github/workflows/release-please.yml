@@ -22,7 +22,7 @@ jobs:
         id: release-please
         uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
 
@@ -34,7 +34,7 @@ jobs:
       - name: Find open release PR branch
         id: release-branch
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           branch=$(gh pr list --repo "${{ github.repository }}" --state open \
             --label "autorelease: pending" --json headRefName,headRepositoryOwner \
@@ -49,7 +49,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ steps.release-branch.outputs.branch }}
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
       - name: Set up uv
         if: ${{ steps.release-branch.outputs.branch != '' }}
