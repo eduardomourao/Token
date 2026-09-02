@@ -12,7 +12,7 @@ relay SSE/JSON sem expor tokens no navegador.
 - [x] Criar importador read-only que recriptografa Fernet local em AES-GCM.
 - [x] Cobrir envelope, filtragem de cabeçalhos e SSE com testes locais.
 - [x] Aplicar migração no projeto Supabase isolado e importar as credenciais.
-- [x] Publicar a função e comprovar 401 sem JWT e leitura privada pelo papel de serviço.
+- [x] Publicar a função e comprovar 401 sem JWT, leitura privada pelo papel de serviço e 409 para um JWT válido sem Account vinculada.
 - [ ] Confirmar relay upstream com um fluxo real sem imprimir credenciais.
 
 ## Compatibilidade intencional
