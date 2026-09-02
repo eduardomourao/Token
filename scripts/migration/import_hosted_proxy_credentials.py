@@ -18,7 +18,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable
-from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from cryptography.fernet import Fernet
@@ -127,22 +126,19 @@ def _batches(records: list[dict[str, Any]]) -> Iterable[list[dict[str, Any]]]:
 def upsert_private_records(
     base_url: str,
     service_role_key: str,
-    table: str,
-    conflict_columns: str,
+    rpc_name: str,
     records: list[dict[str, Any]],
 ) -> None:
-    endpoint = f"{base_url.rstrip('/')}/rest/v1/{table}?on_conflict={quote(conflict_columns, safe=',')}"
+    endpoint = f"{base_url.rstrip('/')}/rest/v1/rpc/{rpc_name}"
     headers = {
         "apikey": service_role_key,
         "Authorization": f"Bearer {service_role_key}",
         "Content-Type": "application/json",
-        "Content-Profile": "app",
-        "Prefer": "resolution=merge-duplicates,return=minimal",
     }
     for batch in _batches(records):
-        request = Request(endpoint, data=json.dumps(batch).encode("utf-8"), headers=headers, method="POST")
+        request = Request(endpoint, data=json.dumps({"rows": batch}).encode("utf-8"), headers=headers, method="POST")
         with urlopen(request, timeout=30) as response:
-            if response.status not in (200, 201):
+            if response.status not in (200, 201, 204):
                 raise RuntimeError(f"Supabase returned HTTP {response.status} for private proxy import")
 
 
@@ -174,8 +170,8 @@ def main() -> int:
         return 0
     if not args.supabase_url or not args.service_role_key:
         raise SystemExit("--supabase-url and --service-role-key are required with --apply")
-    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_accounts", "owner_id,legacy_account_id", model.accounts)
-    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_credentials", "owner_id,legacy_account_id", model.credentials)
+    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_upsert_accounts", model.accounts)
+    upsert_private_records(args.supabase_url, args.service_role_key, "hosted_proxy_upsert_credentials", model.credentials)
     print(json.dumps(counts, sort_keys=True))
     return 0
 
