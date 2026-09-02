@@ -54,3 +54,10 @@
 - O `.vercelignore` local exclui ambientes, dependências, artefatos, testes, documentação, `deploy/` e a árvore Git. A próxima validação deve provar que o upload ficou pequeno antes de declarar preview disponível.
 - A primeira estimativa de 520 MB foi reproduzida: `.code-review-graph/graph.db` local respondia por aproximadamente 514 MiB. A pasta foi adicionada ao `.vercelignore`; sem ela, a árvore elegível é aproximadamente 12 MiB.
 - Deploy Vercel confirmado: `dpl_91JRoMc9uAfcL7scFqj4m5roNbMC`, estado `READY`, URL `https://token-usage-monitor.vercel.app`. O build remoto instalou dependências e concluiu `tsc -b && vite build`. A Vercel classificou-o como produção automaticamente porque era o primeiro deploy do projeto.
+
+## Inventário para o Dashboard hospedado
+
+- A fonte local ativa é `C:\Users\Admin\.codex-lb\store.db` (6.979.584 bytes), lida exclusivamente no modo SQLite read-only. Há backups pré-migração separados no mesmo diretório.
+- A base tem 5 contas, 5.314 leituras de `usage_history`, 305 leituras de `additional_usage_history`, 127 decisões de quota e nenhum log de requisição, chave de API, automação, sessão HTTP bridge ou configuração de proxy ativa.
+- Credenciais OAuth das contas ficam nos campos criptografados de `accounts`; o primeiro modelo hospedado não os copia para o Supabase e não habilita ações que alterem routing. Ele transporta somente metadados de leitura e históricos de quota sob RLS do proprietário.
+- Próximo slice: Dashboard de leitura autenticado pelo Supabase, com resposta compatível para contas e quotas. Logs de requisição, automações, chaves e proxy permanecem fora desse slice porque não existem dados ativos ou dependem do runtime persistente.

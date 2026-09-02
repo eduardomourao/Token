@@ -42,7 +42,8 @@ Fase 1 — descoberta, backup e definição de escopo.
 - [ ] Migrar contas, limites, históricos e dashboards.
 - [ ] Converter coletores curtos em Cron + Edge Functions e publicar alterações pelo Realtime.
 - [ ] Tratar separadamente fluxos que dependem de conexão persistente, streaming ou WebSocket.
-- **Status:** pendente
+- [ ] Entregar Dashboard hospedado de leitura com contas e históricos de quota sem credenciais de routing.
+- **Status:** em andamento
 
 ### Fase 5: migração de dados e execução paralela
 

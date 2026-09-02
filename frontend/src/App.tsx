@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthGate } from "@/features/auth/components/auth-gate";
 import { UsageMonitorAccessGate } from "@/features/usage-monitor/components/usage-monitor-access-gate";
+import { isSupabaseUsageMonitorEnabled } from "@/features/gemini-usage/supabase-usage-monitor";
 import { useAuthStore } from "@/features/auth/hooks/use-auth";
 import { TelemetryConsentDialog } from "@/features/settings/components/telemetry-consent-dialog";
 import { useTimeFormatStore } from "@/hooks/use-time-format";
@@ -37,6 +38,27 @@ const SettingsPage = lazy(() =>
 const UsageMonitorPage = lazy(() =>
   import("@/features/usage-monitor/components/usage-monitor-page").then((m) => ({ default: m.UsageMonitorPage })),
 );
+const HostedDashboardPage = lazy(() =>
+  import("@/features/dashboard/components/hosted-dashboard-page").then((m) => ({ default: m.HostedDashboardPage })),
+);
+
+function HostedApp() {
+  return (
+    <TooltipProvider>
+      <Toaster richColors />
+      <PwaUpdatePrompt />
+      <Routes>
+        <Route path="/usage-monitor" element={(
+          <UsageMonitorAccessGate><Suspense fallback={null}><UsageMonitorPage /></Suspense></UsageMonitorAccessGate>
+        )} />
+        <Route path="/dashboard" element={(
+          <UsageMonitorAccessGate><Suspense fallback={null}><HostedDashboardPage /></Suspense></UsageMonitorAccessGate>
+        )} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </TooltipProvider>
+  );
+}
 
 function AppLayout() {
   const logout = useAuthStore((state) => state.logout);
@@ -75,6 +97,8 @@ function AppLayout() {
 }
 
 export default function App() {
+  if (isSupabaseUsageMonitorEnabled()) return <HostedApp />;
+
   return (
     <TooltipProvider>
       <Toaster richColors />

@@ -62,3 +62,17 @@
 - O Gemini Code Assist para indivíduos foi descontinuado pelo fornecedor no ambiente local. A função mantém a fonte visível, mas classifica a ausência do projeto provider como `upstream_unavailable`; ela não apresenta quota fictícia nem dados antigos como atuais.
 - Supabase Auth agora possui URL estável da Vercel e redirects de preview restritos ao time. Uma tentativa revelou que `[vector]` é uma chave inválida para a CLI atual e poderia solicitar Vector Buckets pagos; ela foi corrigida para `[storage.vector]` com `enabled = false`, e a sincronização final confirmou Auth e Storage sem mudanças pendentes.
 - Validação final desta rodada: 5 testes Deno, 8 testes de migration, 10 testes Vitest focados, typecheck e build Vite de produção concluídos. O build de produção gerou o bundle do Usage Monitor em 14,88 kB sem gzip.
+
+## 2026-09-01 — decisão do Dashboard hospedado de leitura
+
+- A análise local confirmou que o restante do produto ainda inclui proxy, WebSocket, streaming e schedulers persistentes; eles não podem ser declarados equivalentes à Vercel/Supabase sem um redesenho próprio.
+- Foi inventariada em modo SQLite read-only a fonte ativa de dados. O próximo slice vai transportar somente contas sem credenciais e os históricos de quota que alimentam o Dashboard, mantendo operações de routing e OAuth fora do navegador e fora deste slice.
+- Tentativa de retomar dois subagentes persistentes: ambos falharam antes de processar qualquer arquivo porque o ambiente não possui `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` ou `OLLAMA_API_KEY`. Nenhuma credencial foi criada nem alterada; a análise prossegue localmente.
+
+## 2026-09-01 — Dashboard hospedado de leitura
+
+- A migration `20260901200000_hosted_dashboard_read_model.sql` foi aplicada ao Supabase isolado. Ela cria o read model de contas e históricos de quota sem campos OAuth, credenciais de proxy ou chaves de API.
+- O importador opt-in leu `C:\Users\Admin\.codex-lb\store.db` exclusivamente no modo SQLite read-only e importou 5 contas, 5.314 históricos principais e 305 históricos adicionais. As mesmas contagens foram confirmadas no banco remoto.
+- O Dashboard hospedado usa Supabase Auth e RLS, exibe somente leitura, atualiza a consulta em intervalos de 60 segundos e encaminha ao Usage Monitor. No modo hospedado, rotas ainda não migradas redirecionam ao Dashboard em vez de chamar o FastAPI ausente.
+- RLS foi validada com o papel `authenticated`: a sessão proprietária enxerga 5 contas e uma sessão com outro `sub` enxerga 0. A primeira simulação retornou falso porque buscava o owner já sob RLS; a segunda fixou o claim antes de trocar o papel.
+- Validação local: 2 testes Python do read model, 12 testes Vitest focados, typecheck e build Vite aprovados. O advisor remoto informa somente `auth_leaked_password_protection`; a documentação do Supabase limita esse controle ao plano Pro+, enquanto esta aplicação usa magic link e não login por senha.

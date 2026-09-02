@@ -22,6 +22,9 @@ O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma
 8. Como mantenedor, quero retornar ao runtime atual se um fluxo migrado divergir.
 9. Como usuário do monitor PWA, quero preservar seleção, swipe e atualização automática.
 10. Como usuário do proxy, quero que sua continuidade seja uma decisão explícita e não uma regressão silenciosa.
+11. Como operador, quero abrir um Dashboard hospedado e consultar contas e quotas atuais sem expor os tokens das contas.
+12. Como operador, quero que o Dashboard hospedado apresente somente dados que pertencem à minha sessão Supabase.
+13. Como mantenedor, quero importar o modelo de leitura de maneira repetível e comparável à base local.
 
 ## Implementation Decisions
 
@@ -32,6 +35,8 @@ O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma
 - Segredos de provedores ficam somente em configurações de servidor/função. Dados criptografados exigem preservação da chave de origem e validação de descriptografia em staging.
 - O projeto de Vercel não recebe IDs, tokens, URLs sensíveis nem migrações automáticas dentro do repositório.
 - Nenhum deploy de produção, push ou mudança no Supabase é feito sem um estágio de preview e uma decisão explícita de promoção.
+- O Dashboard hospedado começa como modelo de leitura: copia metadados não secretos de contas e históricos de quota, mas não transporta tokens OAuth, configurações de proxy, chaves de API ou operações de routing.
+- A interface hospedada usa uma fronteira de dados Supabase que entrega o contrato de leitura do Dashboard e torna explícitos os módulos ainda não hospedados.
 
 ## Testing Decisions
 
@@ -39,12 +44,14 @@ O proxy OpenAI atual, streaming e WebSockets persistentes são tratados como uma
 - Testes de RLS exercitam usuário autorizado, usuário não autorizado e acesso de serviço.
 - Testes de funções programadas cobrem idempotência, falha de provedor, reexecução e publicação Realtime somente após persistência.
 - Testes de paridade comparam telas, rotas e valores do runtime atual e do fluxo novo para o mesmo conjunto de dados.
+- Testes do importador comparam contagens, identificadores estáveis e os campos permitidos entre SQLite e Supabase, comprovando que nenhum campo criptografado entra no modelo hospedado.
 - O corte requer ensaio de exportação, importação, comparação e rollback.
 
 ## Out of Scope
 
 - Substituir o proxy persistente por funções serverless sem uma especificação de compatibilidade própria.
 - Publicar credenciais, criar projetos externos, migrar dados reais, trocar domínio ou enviar commits ao GitHub nesta fundação.
+- Proxy de inferência, WebSocket, SSE persistente, automações, chaves de API e operações de OAuth/routing no Dashboard hospedado de leitura.
 
 ## Further Notes
 
