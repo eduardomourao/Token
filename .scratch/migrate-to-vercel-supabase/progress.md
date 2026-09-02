@@ -105,3 +105,8 @@
 - A migration `20260901220000_hosted_proxy_oauth_refresh.sql` adicionou claims privadas de 45 segundos e RPCs de compare-and-set para a família de tokens recriptografados. Somente `service_role` pode ler, adquirir, girar ou liberar uma claim.
 - Tanto `refresh-proxy-usage` quanto `proxy-responses` tentam uma única renovação após HTTP 401. A troca usa o refresh token exclusivamente em memória, persiste a nova família somente se o ciphertext ainda é o esperado e repete a requisição upstream uma vez. Falhas permanentes conhecidas viram `reauth_required`; contenção transitória não invalida a conta.
 - A migration e ambas as funções foram publicadas. A prova remota não consumiu OAuth: uma claim retornou `true`, foi liberada e a consulta agregada confirmou zero claims residuais.
+
+## 2026-09-02 — estado hospedado de rate limit
+
+- A migration `20260902000000_hosted_proxy_rate_limit_status.sql` adicionou `reset_at` e `blocked_at` ao estado privado e RPCs somente de `service_role` para marcar e recuperar rate limits. A primeira aplicação foi rejeitada pelo banco porque a coluna ainda não existia; a migration não havia sido aplicada, foi corrigida e a segunda execução concluiu com êxito.
+- `proxy-responses` agora registra HTTP 429 usando `Retry-After` limitado a uma hora e recupera contas cujo prazo já expirou antes da seleção. A função foi publicada após 8 testes Bun e 6 testes Python aprovados.

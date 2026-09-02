@@ -5,6 +5,7 @@ import {
   decryptCredential,
   encryptCredential,
   parseCompletedResponse,
+  retryAfterDeadline,
 } from "./proxy.ts";
 
 const textEncoder = new TextEncoder();
@@ -63,4 +64,10 @@ test("parseCompletedResponse returns the completed response from an upstream SSE
   );
 
   expect(completed).toEqual({ id: "resp_1", status: "completed" });
+});
+
+test("retryAfterDeadline applies a bounded Retry-After hint and safe fallback", () => {
+  expect(retryAfterDeadline("90", 1_700_000_000)).toBe(1_700_000_090);
+  expect(retryAfterDeadline(null, 1_700_000_000)).toBe(1_700_000_030);
+  expect(retryAfterDeadline("99999", 1_700_000_000)).toBe(1_700_003_600);
 });

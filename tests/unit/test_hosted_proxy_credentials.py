@@ -9,6 +9,7 @@ IMPORT_RPC_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "2026090121
 ROUTING_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901213000_hosted_proxy_routing_v1.sql"
 USAGE_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901214500_hosted_proxy_usage_refresh.sql"
 OAUTH_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901220000_hosted_proxy_oauth_refresh.sql"
+RATE_LIMIT_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902000000_hosted_proxy_rate_limit_status.sql"
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -82,3 +83,16 @@ def test_hosted_proxy_oauth_rotation_has_private_claim_and_ciphertext_cas() -> N
     assert "refresh_token_ciphertext = expected_refresh_token_ciphertext" in sql
     assert "revoke all on function public.hosted_proxy_claim_refresh" in sql
     assert "to service_role" in sql
+
+
+def test_hosted_proxy_rate_limit_transition_is_service_role_only() -> None:
+    sql = RATE_LIMIT_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "create function public.hosted_proxy_mark_rate_limited" in sql
+    assert "status = 'rate_limited'" in sql
+    assert "reset_at = requested_reset_at" in sql
+    assert "revoke all on function public.hosted_proxy_mark_rate_limited(uuid, text, bigint) from public, anon, authenticated" in sql
+    assert "grant execute on function public.hosted_proxy_mark_rate_limited(uuid, text, bigint) to service_role" in sql
+    assert "add column reset_at bigint" in sql
+    assert "create function public.hosted_proxy_recover_expired_rate_limits" in sql
+    assert "reset_at <= extract(epoch from now())::bigint" in sql

@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildUpstreamHeaders, decryptCredential, encryptCredential, parseCompletedResponse, validateResponsePayload } from "./proxy.ts";
+import { buildUpstreamHeaders, decryptCredential, encryptCredential, parseCompletedResponse, retryAfterDeadline, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -107,6 +107,8 @@ export default {
     if (!validateResponsePayload(payload)) return json(400, { error: "invalid_responses_payload" });
 
     const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const { error: recoveryError } = await admin.rpc("hosted_proxy_recover_expired_rate_limits", { requested_owner_id: ownerId });
+    if (recoveryError) return json(503, { error: "proxy_storage_unavailable" });
     const { data: accounts, error: accountError } = await admin
       .rpc("hosted_proxy_select_account", { requested_owner_id: ownerId });
     const account = Array.isArray(accounts) ? accounts[0] as HostedProxyAccount | undefined : undefined;
@@ -149,6 +151,14 @@ export default {
           return json(502, { error: "upstream_unavailable" });
         }
       }
+    }
+
+    if (upstream.status === 429) {
+      await admin.rpc("hosted_proxy_mark_rate_limited", {
+        requested_owner_id: ownerId,
+        requested_legacy_account_id: account.legacy_account_id,
+        requested_reset_at: retryAfterDeadline(upstream.headers.get("retry-after")),
+      });
     }
 
     if (payload.stream === true) return new Response(upstream.body, { status: upstream.status, headers: responseHeaders(upstream) });
