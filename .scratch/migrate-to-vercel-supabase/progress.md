@@ -150,3 +150,4 @@
 
 - Produção retornava HTTP 404 em `/health` porque a rota era excluída do fallback SPA, mas ainda não tinha Function. Foram adicionados `/health`, `/health/live`, `/health/ready` e `/health/startup`, com o payload legado em `/health` e identificação explícita de runtime Vercel/HTTP-SSE nos demais.
 - Sete testes Bun de borda passaram, assim como typecheck e build Vite. A validação remota dos quatro caminhos ocorre após o deploy automático da Vercel.
+- A primeira publicação criou as Functions, mas todos os probes retornaram HTTP 500. Os logs de build revelaram `TS5097` nos imports de utilitário com sufixo `.ts`; a Vercel marcou o deploy READY apesar desses erros de compilação por Function. O problema foi reproduzido localmente apenas no pipeline Vercel e a correção remove os sufixos nos imports das Functions antes de nova publicação.

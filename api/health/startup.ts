@@ -1,4 +1,4 @@
-import { hostedHealthPayload } from "../../lib/hosted-health.ts";
+import { hostedHealthPayload } from "../../lib/hosted-health";
 
 type Response = { status(code: number): Response; json(payload: unknown): void };
 
