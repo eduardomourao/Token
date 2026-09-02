@@ -24,11 +24,12 @@
 
 ## 3. Durable gateway
 
-- [~] 3.1 Add an owner-scoped Supabase spool/cursor schema, retention job and
+- [x] 3.1 Add an owner-scoped Supabase spool/cursor schema, retention job and
       RLS tests. Persist each outbound event before it is visible to the
       downstream socket. (Schema, bounded purge RPC, RLS and remote lint are
-      complete; gateway persistence is pending.)
-- [ ] 3.2 Relay a validated create to the existing HTTP/SSE proxy with only
+      complete; a remote create persisted nine events and the terminal cursor
+      before the downstream socket completed.)
+- [x] 3.2 Relay a validated create to the existing HTTP/SSE proxy with only
       the authenticated caller context and a bounded session affinity key.
 - [ ] 3.3 Support one explicit cancellation path and one replay path from a
       persisted cursor; refuse replay when a frame was visible but cannot be

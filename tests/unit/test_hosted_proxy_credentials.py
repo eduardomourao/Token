@@ -14,6 +14,7 @@ SESSION_AFFINITY_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "2026
 API_KEYS_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260902010000_hosted_proxy_api_keys.sql"
 WEBSOCKET_SPOOL_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_hosted_proxy_websocket_spool.sql"))
 WEBSOCKET_SPOOL_FIX_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_fix_hosted_proxy_websocket_spool_cleanup.sql"))
+WEBSOCKET_SPOOL_SCHEDULE_MIGRATION = next(REPOSITORY_ROOT.glob("supabase/migrations/*_schedule_hosted_proxy_websocket_spool_purge.sql"))
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -147,3 +148,13 @@ def test_hosted_websocket_spool_is_private_owner_scoped_and_bounded() -> None:
     assert "create function public.hosted_proxy_read_websocket_events" in sql
     assert "terminal_cursor is null" in sql
     assert "to service_role" in sql
+
+
+def test_hosted_websocket_spool_has_an_idempotent_periodic_purge() -> None:
+    sql = WEBSOCKET_SPOOL_SCHEDULE_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "purge-hosted-proxy-websocket-spools" in sql
+    assert "cron.unschedule" in sql
+    assert "cron.schedule" in sql
+    assert "'*/5 * * * *'" in sql
+    assert "select public.hosted_proxy_purge_expired_websocket_spools();" in sql
