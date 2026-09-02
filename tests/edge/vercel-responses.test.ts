@@ -19,3 +19,10 @@ test("buildEdgeFunctionHeaders preserves only the caller JWT required by the Sup
 test("buildEdgeFunctionHeaders rejects a request without a bearer JWT", () => {
   expect(() => buildEdgeFunctionHeaders({ "content-type": "application/json" })).toThrow("authorization");
 });
+
+test("buildEdgeFunctionHeaders accepts the explicit Vercel-safe JWT header", () => {
+  expect(buildEdgeFunctionHeaders({ "x-supabase-authorization": "Bearer user-session-jwt" })).toEqual({
+    authorization: "Bearer user-session-jwt",
+    "content-type": "application/json",
+  });
+});

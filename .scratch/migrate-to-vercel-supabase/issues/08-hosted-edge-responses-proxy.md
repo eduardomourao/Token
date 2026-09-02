@@ -20,3 +20,11 @@ relay SSE/JSON sem expor tokens no navegador.
 Esta vertical não substitui o runtime persistente inteiro. Ela preserva apenas
 o contrato HTTP de Responses, e mantém WebSocket, afinidade, replay,
 failover e as demais rotas em tickets posteriores.
+
+## Transporte no domínio Vercel
+
+A borda da Vercel remove `Authorization` das requisições externas de
+`/v1/responses`. Por isso, clientes que usam o domínio Vercel devem enviar o
+JWT do Supabase em `x-supabase-authorization: Bearer <jwt>`. A função Vercel
+reconstrói `Authorization` somente para a Edge Function; esse cabeçalho nunca
+segue ao upstream ChatGPT.
