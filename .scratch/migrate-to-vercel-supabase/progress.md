@@ -151,3 +151,8 @@
 - Produção retornava HTTP 404 em `/health` porque a rota era excluída do fallback SPA, mas ainda não tinha Function. Foram adicionados `/health`, `/health/live`, `/health/ready` e `/health/startup`, com o payload legado em `/health` e identificação explícita de runtime Vercel/HTTP-SSE nos demais.
 - Sete testes Bun de borda passaram, assim como typecheck e build Vite. Após a correção, a CLI autenticada da Vercel confirmou HTTP 200 em `/health`, `/health/live`, `/health/ready` e `/health/startup`, com os payloads esperados.
 - A primeira publicação criou as Functions, mas todos os probes retornaram HTTP 500. Os logs de build revelaram `TS5097` nos imports de utilitário com sufixo `.ts`; a Vercel marcou o deploy READY apesar desses erros de compilação por Function. O problema foi reproduzido localmente apenas no pipeline Vercel e a correção remove os sufixos nos imports das Functions antes de nova publicação.
+
+## 2026-09-02 — aliases HTTP nativos de Responses
+
+- A borda Vercel agora encaminha `/backend-api/codex/responses` e `/backend-api/codex/v1/responses` ao mesmo relay já usado por `/v1/responses`. O relay carrega o Bearer e `x-codex-session-id` apenas até a Edge Function; o identificador é limitado a 512 caracteres, transformado em hash para afinidade e removido antes da chamada upstream.
+- Treze testes Bun de borda/Edge Function e typecheck/build Vite passaram. A tentativa de `vercel build --prod` local instalou dependências e baixou as configurações, mas o executor não consegue iniciar `cmd.exe` (`ENOENT`); o arquivo temporário de ambiente foi removido sem leitura. O deploy GitHub–Vercel é a prova de compilação pendente para esta alteração.

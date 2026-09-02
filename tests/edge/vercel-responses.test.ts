@@ -1,11 +1,13 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
 import { buildEdgeFunctionHeaders } from "../../api/v1/responses.ts";
 
-test("buildEdgeFunctionHeaders preserves only the caller JWT required by the Supabase Edge Function", () => {
+test("buildEdgeFunctionHeaders keeps the caller credential and opaque affinity key only at the hosted boundary", () => {
   const headers = buildEdgeFunctionHeaders({
     authorization: "Bearer user-session-jwt",
     "content-type": "application/json",
+    "x-codex-session-id": "session-1",
     apikey: "browser-key-that-must-not-be-forwarded",
     host: "token-usage-monitor.vercel.app",
   });
@@ -13,6 +15,22 @@ test("buildEdgeFunctionHeaders preserves only the caller JWT required by the Sup
   expect(headers).toEqual({
     authorization: "Bearer user-session-jwt",
     "content-type": "application/json",
+    "x-codex-session-id": "session-1",
+  });
+});
+
+test("Vercel routes both native Responses aliases through the hosted relay", () => {
+  const config = JSON.parse(readFileSync(new URL("../../vercel.json", import.meta.url), "utf8")) as {
+    rewrites: Array<{ source: string; destination: string }>;
+  };
+
+  expect(config.rewrites).toContainEqual({
+    source: "/backend-api/codex/responses",
+    destination: "/api/backend-api/codex/responses",
+  });
+  expect(config.rewrites).toContainEqual({
+    source: "/backend-api/codex/v1/responses",
+    destination: "/api/backend-api/codex/responses",
   });
 });
 

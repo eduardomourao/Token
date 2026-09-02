@@ -9,6 +9,7 @@ const BLOCKED_INBOUND_HEADERS = new Set([
   "forwarded",
   "x-real-ip",
   "true-client-ip",
+  "x-codex-session-id",
 ]);
 
 function toHeaderEntries(headers: Headers | Record<string, string>): Iterable<[string, string]> {

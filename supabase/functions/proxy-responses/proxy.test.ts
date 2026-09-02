@@ -55,7 +55,7 @@ test("buildUpstreamHeaders removes caller credentials and applies the selected a
   expect(headers.Host).toBeUndefined();
   expect(headers["Content-Length"]).toBeUndefined();
   expect(headers.Forwarded).toBeUndefined();
-  expect(headers["x-codex-session-id"]).toBe("session-1");
+  expect(headers["x-codex-session-id"]).toBeUndefined();
 });
 
 test("parseCompletedResponse returns the completed response from an upstream SSE stream", () => {

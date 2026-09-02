@@ -25,10 +25,15 @@ export function buildEdgeFunctionHeaders(headers: Record<string, HeaderValue>): 
   if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) {
     throw new Error("authorization bearer credential is required");
   }
-  return {
+  const edgeHeaders = {
     authorization,
     "content-type": "application/json",
   };
+  const sessionId = headers["x-codex-session-id"];
+  if (typeof sessionId === "string" && sessionId.length <= 512) {
+    return { ...edgeHeaders, "x-codex-session-id": sessionId };
+  }
+  return edgeHeaders;
 }
 
 function copyResponseHeaders(source: Headers, destination: NodeResponse): void {

@@ -27,6 +27,14 @@
       "destination": "/api/v1/responses"
     },
     {
+      "source": "/backend-api/codex/responses",
+      "destination": "/api/backend-api/codex/responses"
+    },
+    {
+      "source": "/backend-api/codex/v1/responses",
+      "destination": "/api/backend-api/codex/responses"
+    },
+    {
       "source": "/((?!api(?:/|$)|v1(?:/|$)|backend-api(?:/|$)|health(?:/|$)).*)",
       "destination": "/index.html"
     }
