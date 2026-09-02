@@ -7,6 +7,10 @@
   "outputDirectory": "app/static",
   "rewrites": [
     {
+      "source": "/v1/responses",
+      "destination": "https://mtokqhqdkkxbyvgjwyvu.supabase.co/functions/v1/proxy-responses"
+    },
+    {
       "source": "/((?!api(?:/|$)|v1(?:/|$)|backend-api(?:/|$)|health(?:/|$)).*)",
       "destination": "/index.html"
     }
