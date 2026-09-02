@@ -62,3 +62,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/proxy-responses/deno.json"
 entrypoint = "./functions/proxy-responses/index.ts"
+
+[functions.refresh-proxy-usage]
+enabled = true
+verify_jwt = false
+import_map = "./functions/refresh-proxy-usage/deno.json"
+entrypoint = "./functions/refresh-proxy-usage/index.ts"

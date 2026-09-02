@@ -7,6 +7,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901210000_hosted_proxy_credentials.sql"
 IMPORT_RPC_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901211500_hosted_proxy_import_rpc.sql"
 ROUTING_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901213000_hosted_proxy_routing_v1.sql"
+USAGE_REFRESH_MIGRATION = REPOSITORY_ROOT / "supabase" / "migrations" / "20260901214500_hosted_proxy_usage_refresh.sql"
 
 
 def test_hosted_proxy_credentials_are_private_and_not_browser_grantable() -> None:
@@ -54,3 +55,16 @@ def test_hosted_proxy_selection_preserves_private_routing_and_quota_gates() -> N
     assert "update app.hosted_proxy_accounts" in sql
     assert "revoke all on function public.hosted_proxy_select_account(uuid) from public, anon, authenticated" in sql
     assert "grant execute on function public.hosted_proxy_select_account(uuid) to service_role" in sql
+
+
+def test_hosted_proxy_usage_refresh_keeps_credentials_private_and_is_scheduled() -> None:
+    sql = USAGE_REFRESH_MIGRATION.read_text(encoding="utf-8").lower()
+
+    assert "hosted_dashboard_usage_history_source_id_seq" in sql
+    assert "create function public.hosted_proxy_accounts_for_usage_refresh(requested_owner_id uuid)" in sql
+    assert "access_token_ciphertext" in sql
+    assert "create function public.hosted_proxy_mark_reauth_required" in sql
+    assert "revoke all on function public.hosted_proxy_accounts_for_usage_refresh(uuid) from public, anon, authenticated" in sql
+    assert "grant execute on function public.hosted_proxy_accounts_for_usage_refresh(uuid) to service_role" in sql
+    assert "cron.schedule(" in sql
+    assert "refresh-hosted-proxy-usage" in sql

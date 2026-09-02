@@ -93,3 +93,9 @@
 - A RPC continua acessível exclusivamente por `service_role`; ela devolve somente identificadores de roteamento necessários à Edge Function e não expõe credenciais, e-mails ou histórico para o navegador.
 - Validações locais: 6 testes Python dos contratos/migração/importação e 6 testes Bun da borda Vercel/Edge Function aprovados. `supabase migration list --linked` confirmou paridade local/remota até `20260901213000`.
 - Limite declarado: os históricos de quota são a cópia inicial hospedada; atualização upstream contínua, classificação de erro/failover no mesmo request, afinidade, replay e WebSocket continuam pendentes e não devem ser considerados equivalentes ao FastAPI persistente.
+
+## 2026-09-01 — atualização hospedada de quota do proxy
+
+- A migration `20260901214500_hosted_proxy_usage_refresh.sql` adicionou a sequência de histórico hospedado, RPCs privadas de coleta e o cron `refresh-hosted-proxy-usage` a cada cinco minutos. A Edge Function de mesmo nome decripta credenciais apenas em memória, consulta `GET /backend-api/wham/usage` e grava somente percentuais, resets e metadados não secretos no read model.
+- A verificação foi disparada dentro do banco com o segredo já armazenado no Vault. O `pg_net` recebeu HTTP 200 sem timeout/erro; o histórico subiu de 5.314 para 5.334 linhas e o agregado privado confirmou 5 contas `active` com `last_refresh_at` preenchido. Nenhum token, e-mail ou payload foi retornado pela verificação.
+- Mantém-se a limitação correta: uma resposta 401 passa a conta para `reauth_required`, mas a rotação de refresh token e o retry/failover da própria requisição de Responses ainda não foram portados.
