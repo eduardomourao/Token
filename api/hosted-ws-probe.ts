@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { experimental_upgradeWebSocket, type WebSocket } from "@vercel/functions";
 
-import { HOSTED_WEBSOCKET_MAX_FRAME_BYTES } from "./_lib/hosted-websocket";
+import { HOSTED_WEBSOCKET_MAX_FRAME_BYTES, HostedResponsesSseDecoder, parseHostedResponseCreate } from "./_lib/hosted-websocket";
 
 const EDGE_FUNCTION_URL = "https://mtokqhqdkkxbyvgjwyvu.supabase.co/functions/v1/proxy-responses";
 
@@ -38,16 +39,39 @@ function requestHeaders(headers: Record<string, HeaderValue>): Headers {
   return normalized;
 }
 
-function safeClose(socket: WebSocket): void {
+function safeClose(socket: WebSocket, code: string, message: string): void {
   try {
     socket.send(JSON.stringify({
       type: "error",
-      error: { code: "hosted_websocket_probe_only", message: "This hosted WebSocket route is a compatibility probe." },
+      error: { code, message },
     }));
     socket.close(1008, "Hosted WebSocket probe only");
   } catch {
     // The peer may have closed while the probe was responding.
   }
+}
+
+function relayHeaders(headers: Headers): Record<string, string> {
+  const authorization = headers.get("x-supabase-authorization") ?? headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) throw new Error("authorization bearer credential is required");
+  const result = { authorization, "content-type": "application/json" };
+  const sessionId = headers.get("x-codex-session-id");
+  return sessionId && sessionId.length <= 512 ? { ...result, "x-codex-session-id": sessionId } : result;
+}
+
+async function spool(headers: Headers, action: "create" | "append", payload: Record<string, unknown>): Promise<Response> {
+  return fetch(EDGE_FUNCTION_URL, {
+    method: "POST",
+    headers: { ...buildHostedWebSocketPreflightHeaders(headers), "content-type": "application/json", "x-codex-websocket-spool-action": action },
+    body: JSON.stringify(payload),
+  });
+}
+
+function isTerminal(frame: string): boolean {
+  try {
+    const type = (JSON.parse(frame) as { type?: unknown }).type;
+    return type === "response.completed" || type === "response.failed" || type === "response.incomplete" || type === "error";
+  } catch { return false; }
 }
 
 export default async function handler(request: NodeRequest, response: NodeResponse): Promise<void> {
@@ -83,8 +107,37 @@ export default async function handler(request: NodeRequest, response: NodeRespon
 
   try {
     await experimental_upgradeWebSocket((socket) => {
-      socket.send(JSON.stringify({ type: "hosted.websocket.probe" }));
-      socket.once("message", () => safeClose(socket));
+      let active = false;
+      socket.on("message", async (data, isBinary) => {
+        if (isBinary || active) { safeClose(socket, "invalid_client_frame", "Hosted gateway accepts one text response.create at a time."); return; }
+        const parsed = parseHostedResponseCreate(data.toString());
+        if (!parsed.ok) {
+          if (parsed.error === "ignored_client_frame") return;
+          safeClose(socket, parsed.error, "Invalid Responses WebSocket frame.");
+          return;
+        }
+        active = true;
+        const spoolId = randomUUID();
+        try {
+          if (!(await spool(headers, "create", { spool_id: spoolId })).ok) throw new Error("spool create failed");
+          const upstream = await fetch(EDGE_FUNCTION_URL, { method: "POST", headers: relayHeaders(headers), body: JSON.stringify(parsed.payload) });
+          if (!upstream.ok || !upstream.body) throw new Error("relay failed");
+          const decoder = new HostedResponsesSseDecoder();
+          const reader = upstream.body.getReader();
+          const textDecoder = new TextDecoder();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            for (const frame of decoder.push(textDecoder.decode(value, { stream: true }))) {
+              if (!(await spool(headers, "append", { spool_id: spoolId, event_frame: JSON.parse(frame), is_terminal: isTerminal(frame) })).ok) throw new Error("spool append failed");
+              socket.send(frame);
+              if (isTerminal(frame)) active = false;
+            }
+          }
+        } catch {
+          safeClose(socket, "hosted_gateway_failed", "Hosted WebSocket gateway could not complete the request.");
+        }
+      });
     }, { maxPayload: HOSTED_WEBSOCKET_MAX_FRAME_BYTES });
   } catch {
     response.status(503).json({ error: "websocket_unavailable" });
