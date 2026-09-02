@@ -1,7 +1,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
-import { buildUpstreamHeaders, decryptCredential, encryptCredential, parseCompletedResponse, retryAfterDeadline, validateResponsePayload } from "./proxy.ts";
+import { buildUpstreamHeaders, decryptCredential, encryptCredential, mayFailoverBeforeVisibleOutput, parseCompletedResponse, retryAfterDeadline, validateResponsePayload } from "./proxy.ts";
 import { OAuthRefreshError, refreshOAuthTokens } from "../refresh-proxy-usage/oauth.ts";
 
 const UPSTREAM_URL = "https://chatgpt.com/backend-api/codex/responses";
@@ -159,6 +159,36 @@ export default {
         requested_legacy_account_id: account.legacy_account_id,
         requested_reset_at: retryAfterDeadline(upstream.headers.get("retry-after")),
       });
+    }
+
+    if (mayFailoverBeforeVisibleOutput(payload, upstream.status)) {
+      const { data: retryAccounts, error: retryAccountError } = await admin
+        .rpc("hosted_proxy_select_account", { requested_owner_id: ownerId });
+      const retryAccount = Array.isArray(retryAccounts) ? retryAccounts[0] as HostedProxyAccount | undefined : undefined;
+      if (!retryAccountError && retryAccount && retryAccount.legacy_account_id !== account.legacy_account_id) {
+        const { data: retryCredentialRows, error: retryCredentialsError } = await admin.rpc("hosted_proxy_credentials_for_account", {
+          requested_owner_id: ownerId,
+          requested_legacy_account_id: retryAccount.legacy_account_id,
+        });
+        const retryCredentials = Array.isArray(retryCredentialRows) ? retryCredentialRows[0] as HostedProxyCredential | undefined : undefined;
+        if (!retryCredentialsError && retryCredentials) {
+          try {
+            const retryToken = await decryptCredential(retryCredentials.access_token_ciphertext, credentialKey);
+            const retryHeaders = buildUpstreamHeaders(request.headers, retryToken, retryAccount.chatgpt_account_id);
+            retryHeaders["x-codex-installation-id"] = retryAccount.codex_installation_id;
+            upstream = await fetch(UPSTREAM_URL, { method: "POST", headers: retryHeaders, body: JSON.stringify(payload) });
+            if (upstream.status === 429) {
+              await admin.rpc("hosted_proxy_mark_rate_limited", {
+                requested_owner_id: ownerId,
+                requested_legacy_account_id: retryAccount.legacy_account_id,
+                requested_reset_at: retryAfterDeadline(upstream.headers.get("retry-after")),
+              });
+            }
+          } catch {
+            // Preserve the first upstream 429 when the fallback cannot be reached.
+          }
+        }
+      }
     }
 
     if (payload.stream === true) return new Response(upstream.body, { status: upstream.status, headers: responseHeaders(upstream) });

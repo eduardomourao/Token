@@ -4,6 +4,7 @@ import {
   buildUpstreamHeaders,
   decryptCredential,
   encryptCredential,
+  mayFailoverBeforeVisibleOutput,
   parseCompletedResponse,
   retryAfterDeadline,
 } from "./proxy.ts";
@@ -70,4 +71,10 @@ test("retryAfterDeadline applies a bounded Retry-After hint and safe fallback", 
   expect(retryAfterDeadline("90", 1_700_000_000)).toBe(1_700_000_090);
   expect(retryAfterDeadline(null, 1_700_000_000)).toBe(1_700_000_030);
   expect(retryAfterDeadline("99999", 1_700_000_000)).toBe(1_700_003_600);
+});
+
+test("mayFailoverBeforeVisibleOutput excludes streaming and non-rate-limit failures", () => {
+  expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x" }, 429)).toBeTrue();
+  expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x", stream: true }, 429)).toBeFalse();
+  expect(mayFailoverBeforeVisibleOutput({ model: "gpt-5", input: "x" }, 502)).toBeFalse();
 });

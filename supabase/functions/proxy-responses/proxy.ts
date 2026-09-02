@@ -94,3 +94,7 @@ export function retryAfterDeadline(retryAfter: string | null, nowEpoch = Math.fl
   const delay = Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 30;
   return nowEpoch + Math.min(delay, 3600);
 }
+
+export function mayFailoverBeforeVisibleOutput(payload: Record<string, unknown>, upstreamStatus: number): boolean {
+  return payload.stream !== true && upstreamStatus === 429;
+}

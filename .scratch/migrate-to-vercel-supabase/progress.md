@@ -110,3 +110,8 @@
 
 - A migration `20260902000000_hosted_proxy_rate_limit_status.sql` adicionou `reset_at` e `blocked_at` ao estado privado e RPCs somente de `service_role` para marcar e recuperar rate limits. A primeira aplicação foi rejeitada pelo banco porque a coluna ainda não existia; a migration não havia sido aplicada, foi corrigida e a segunda execução concluiu com êxito.
 - `proxy-responses` agora registra HTTP 429 usando `Retry-After` limitado a uma hora e recupera contas cujo prazo já expirou antes da seleção. A função foi publicada após 8 testes Bun e 6 testes Python aprovados.
+
+## 2026-09-02 — failover hospedado antes de saída
+
+- `proxy-responses` agora faz uma única tentativa de fallback apenas para Requests JSON que receberam HTTP 429 antes de produzir uma resposta. Primeiro persiste o cooldown, seleciona outra conta pelo seletor privado e repete a chamada uma vez; se a segunda também devolver 429, grava o segundo cooldown e encerra.
+- O caminho `stream: true` é explicitamente excluído para não repetir SSE já potencialmente observável. As validações concluíram com 9 testes Bun e 6 testes Python antes da publicação da função.
