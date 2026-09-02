@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/v1/responses",
-      "destination": "https://mtokqhqdkkxbyvgjwyvu.supabase.co/functions/v1/proxy-responses"
+      "destination": "/api/v1/responses"
     },
     {
       "source": "/((?!api(?:/|$)|v1(?:/|$)|backend-api(?:/|$)|health(?:/|$)).*)",
