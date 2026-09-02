@@ -121,3 +121,8 @@
 - A afinidade foi retomada após interrupção de contexto. O teste inicial do hash SHA-256 falhou porque o valor esperado do fixture estava incorreto; a implementação calculou `84097828...` para a entrada sintética. A expectativa foi corrigida antes de repetir a suíte. Nenhum dado de sessão real foi persistido ou mostrado.
 - A suíte final aprovou 10 testes Bun e 7 testes Python. A migration `20260902003000_hosted_proxy_session_affinity.sql` foi aplicada ao projeto isolado e `proxy-responses` foi publicado como versão 8, com estado `ACTIVE`; `supabase migration list --linked` confirmou a paridade local/remota.
 - A revisão Matt formal ficou bloqueada porque o ambiente ainda não tem provedor de subagentes configurado; a inspeção manual permaneceu limitada ao ticket 13, ao diff e às suítes focadas. `code-review-graph` foi deliberadamente ignorado por autorização do usuário.
+
+## 2026-09-02 — integração GitHub–Vercel
+
+- O projeto Vercel `token-usage-monitor` foi conectado ao repositório `https://github.com/eduardomourao/Token.git` pela CLI autenticada. Antes disso, o alias de produção respondia HTTP 200, mas o projeto não informava uma conexão Git e continuava apontando para o deploy anterior.
+- Uma tentativa de preview local transferiu 53,9 kB, mas a CLI não retornou URL nem estado final e exibiu um aviso sobre o subdiretório `deploy`; o preview ficou **não verificado** e não foi promovido. O próximo push é a prova deliberada da automação Git e deve ser inspecionado antes de declarar CI/CD saudável.
