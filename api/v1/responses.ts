@@ -1,3 +1,5 @@
+import { handleHostedWebSocketUpgrade } from "../hosted-ws-probe";
+
 const EDGE_FUNCTION_URL = "https://mtokqhqdkkxbyvgjwyvu.supabase.co/functions/v1/proxy-responses";
 
 type HeaderValue = string | string[] | undefined;
@@ -15,10 +17,16 @@ type NodeResponse = {
 };
 
 export const config = {
+  runtime: "nodejs",
   api: {
     bodyParser: { sizeLimit: "2mb" },
   },
 };
+
+export function shouldUpgradeHostedResponses(request: Pick<NodeRequest, "method" | "headers">): boolean {
+  const upgrade = request.headers.upgrade ?? request.headers.Upgrade;
+  return request.method === "GET" && typeof upgrade === "string" && upgrade.toLowerCase() === "websocket";
+}
 
 export function buildEdgeFunctionHeaders(headers: Record<string, HeaderValue>): Record<string, string> {
   const authorization = headers["x-supabase-authorization"] ?? headers.authorization;
@@ -47,6 +55,10 @@ function copyResponseHeaders(source: Headers, destination: NodeResponse): void {
 }
 
 export default async function handler(request: NodeRequest, response: NodeResponse): Promise<void> {
+  if (shouldUpgradeHostedResponses(request)) {
+    await handleHostedWebSocketUpgrade(request, response);
+    return;
+  }
   if (request.method !== "POST") {
     response.status(405).json({ error: "method_not_allowed" });
     return;
