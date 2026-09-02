@@ -13,6 +13,7 @@ relay SSE/JSON sem expor tokens no navegador.
 - [x] Cobrir envelope, filtragem de cabeçalhos e SSE com testes locais.
 - [x] Aplicar migração no projeto Supabase isolado e importar as credenciais.
 - [x] Publicar a função e comprovar 401 sem JWT, leitura privada pelo papel de serviço e 409 para um JWT válido sem Account vinculada.
+- [x] Substituir a seleção alfabética pela política persistida `burn_first` → `normal` → `preserve`, com bloqueio por status, quota conhecida e menor uso recente.
 - [ ] Confirmar relay upstream com um fluxo real sem imprimir credenciais.
 
 ## Compatibilidade intencional
@@ -20,6 +21,16 @@ relay SSE/JSON sem expor tokens no navegador.
 Esta vertical não substitui o runtime persistente inteiro. Ela preserva apenas
 o contrato HTTP de Responses, e mantém WebSocket, afinidade, replay,
 failover e as demais rotas em tickets posteriores.
+
+## Seleção hospedada v1
+
+A RPC privada `hosted_proxy_select_account` considera somente contas `active`,
+exclui janelas primária ou secundária conhecidas como esgotadas até o respectivo
+reset, prioriza a política manual e registra `last_selected_at`. Isso evita o
+primeiro comportamento provisório de escolher sempre a conta alfabética. A
+atualização de quota a partir do upstream, o failover no mesmo request e a
+afinidade continuam fora deste ticket e não são inferidos a partir de dados
+históricos antigos.
 
 ## Transporte no domínio Vercel
 

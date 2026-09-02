@@ -86,3 +86,10 @@
 - O rewrite externo inicial da Vercel removia `Authorization`. A rota foi substituída por `api/v1/responses`, uma função curta da Vercel que encaminha somente `x-supabase-authorization` ao Supabase como `Authorization`. O preview protegido foi validado com o bypass autenticado da CLI e recebeu 409 no mesmo cenário de teste.
 - GitHub: os commits até `060df93` foram enviados para `eduardomourao/Token` na `main`.
 - Vercel: a versão `dpl_AxCtkSTgWAC3xcsX4Ee1eQBqR1CV` está READY em produção, com alias `https://token-usage-monitor.vercel.app`; inspeção confirma a função `api/v1/responses` e o alias respondeu HTTP 200 pelo bypass autenticado.
+
+## 2026-09-01 — seleção hospedada de contas v1
+
+- A migration `20260901213000_hosted_proxy_routing_v1.sql` foi aplicada ao Supabase isolado e a função `proxy-responses` foi republicada. Ela substitui a escolha alfabética provisória por uma RPC privada com bloqueio por status, exclusão de janelas de quota já esgotadas, política `burn_first` → `normal` → `preserve` e menor `last_selected_at`.
+- A RPC continua acessível exclusivamente por `service_role`; ela devolve somente identificadores de roteamento necessários à Edge Function e não expõe credenciais, e-mails ou histórico para o navegador.
+- Validações locais: 6 testes Python dos contratos/migração/importação e 6 testes Bun da borda Vercel/Edge Function aprovados. `supabase migration list --linked` confirmou paridade local/remota até `20260901213000`.
+- Limite declarado: os históricos de quota são a cópia inicial hospedada; atualização upstream contínua, classificação de erro/failover no mesmo request, afinidade, replay e WebSocket continuam pendentes e não devem ser considerados equivalentes ao FastAPI persistente.

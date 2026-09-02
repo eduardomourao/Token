@@ -101,7 +101,7 @@ export default {
 
     const admin = createClient(supabaseUrl, adminKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: accounts, error: accountError } = await admin
-      .rpc("hosted_proxy_active_account", { requested_owner_id: ownerId });
+      .rpc("hosted_proxy_select_account", { requested_owner_id: ownerId });
     const account = Array.isArray(accounts) ? accounts[0] as HostedProxyAccount | undefined : undefined;
     if (accountError) return json(503, { error: "proxy_storage_unavailable" });
     if (!account) return json(409, { error: "no_active_proxy_account" });
