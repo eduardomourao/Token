@@ -23,6 +23,24 @@ const REQUIRED_API_PATHS = [
   "/api/settings/telemetry",
 ] as const;
 
+const DASHBOARD_SMOKE_PASSWORD = "browser-smoke-password";
+
+async function authenticateSmokePage(page: Page): Promise<void> {
+  const sessionResponse = await page.context().request.get("/api/dashboard-auth/session");
+  const session = AuthSessionSchema.parse(await sessionResponse.json());
+  const endpoint = session.passwordRequired ? "/api/dashboard-auth/password/login" : "/api/dashboard-auth/password/setup";
+  const response = await page.context().request.post(endpoint, {
+    data: { password: DASHBOARD_SMOKE_PASSWORD },
+  });
+
+  expect(response.ok(), `dashboard smoke authentication via ${endpoint}`).toBe(true);
+  AuthSessionSchema.parse(await response.json());
+}
+
+test.beforeEach(async ({ page }) => {
+  await authenticateSmokePage(page);
+});
+
 async function installMobileContainmentFixtures(page: Page): Promise<void> {
   const accounts = [
     createAccountSummary({
