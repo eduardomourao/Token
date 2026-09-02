@@ -10,6 +10,7 @@ plataforma Vercel, sem declarar estado de processos persistentes inexistentes.
 - [x] Expor o escopo real nos demais probes: runtime Vercel e transporte
   hospedado HTTP/SSE.
 - [x] Cobrir o contrato com testes de borda e build Vite.
+- [x] Confirmar os quatro probes no deploy de produção autenticado pela CLI Vercel.
 
 ## Limite declarado
 
