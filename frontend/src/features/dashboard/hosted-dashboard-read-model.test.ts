@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, type Mock, vi } from "vitest";
 
-import { mapHostedDashboardReadModel } from "./hosted-dashboard-read-model";
+import { mapHostedDashboardReadModel, subscribeHostedDashboardReadModel } from "./hosted-dashboard-read-model";
 
 describe("mapHostedDashboardReadModel", () => {
   it("keeps the latest sample per account and window while excluding unavailable history", () => {
@@ -26,5 +26,35 @@ describe("mapHostedDashboardReadModel", () => {
         { key: "monthly", usedPercent: 20, remainingPercent: 80, resetAt: null },
       ],
     }]);
+  });
+});
+
+describe("subscribeHostedDashboardReadModel", () => {
+  it("watches new owner-readable usage rows and releases the channel on cleanup", () => {
+    const onInsert = vi.fn();
+    const channel: { on: Mock; subscribe: Mock } = {
+      on: vi.fn(),
+      subscribe: vi.fn(),
+    };
+    channel.on.mockImplementation((_type: unknown, _filter: unknown, callback: () => void) => {
+        onInsert.mockImplementation(callback);
+        return channel;
+    });
+    const client = { channel: vi.fn(() => channel), removeChannel: vi.fn() };
+    const onChange = vi.fn();
+
+    const unsubscribe = subscribeHostedDashboardReadModel(onChange, client);
+
+    expect(client.channel).toHaveBeenCalledWith("hosted-dashboard-read-model");
+    expect(channel.on).toHaveBeenCalledWith("postgres_changes", {
+      event: "INSERT", schema: "public", table: "hosted_dashboard_usage_history",
+    }, expect.any(Function));
+    expect(channel.subscribe).toHaveBeenCalledTimes(1);
+
+    onInsert();
+    expect(onChange).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    expect(client.removeChannel).toHaveBeenCalledWith(channel);
   });
 });

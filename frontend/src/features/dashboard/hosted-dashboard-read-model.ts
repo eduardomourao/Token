@@ -39,6 +39,20 @@ export type HostedDashboardReadModel = {
   accounts: HostedDashboardAccount[];
 };
 
+type HostedDashboardRealtimeChannel = {
+  on(
+    event: "postgres_changes",
+    filter: { event: "INSERT"; schema: "public"; table: "hosted_dashboard_usage_history" },
+    callback: () => void,
+  ): HostedDashboardRealtimeChannel;
+  subscribe(): unknown;
+};
+
+type HostedDashboardRealtimeClient = {
+  channel(name: string): HostedDashboardRealtimeChannel;
+  removeChannel(channel: HostedDashboardRealtimeChannel): unknown;
+};
+
 export function mapHostedDashboardReadModel(
   accounts: HostedDashboardAccountRow[],
   usageHistory: HostedDashboardUsageRow[],
@@ -99,4 +113,15 @@ export async function getHostedDashboardReadModel(): Promise<HostedDashboardRead
   if (accountsResult.error) throw accountsResult.error;
   if (usageResult.error) throw usageResult.error;
   return mapHostedDashboardReadModel(accountsResult.data ?? [], usageResult.data ?? []);
+}
+
+export function subscribeHostedDashboardReadModel(
+  onChange: () => void,
+  realtimeClient = getSupabaseUsageMonitorClient() as unknown as HostedDashboardRealtimeClient,
+): () => void {
+  const channel = realtimeClient
+    .channel("hosted-dashboard-read-model")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "hosted_dashboard_usage_history" }, onChange);
+  channel.subscribe();
+  return () => { void realtimeClient.removeChannel(channel); };
 }

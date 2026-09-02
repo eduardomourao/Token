@@ -17,6 +17,7 @@ vi.mock("../hosted-dashboard-read-model", () => ({
       windows: [{ key: "primary", usedPercent: 35, remainingPercent: 65, resetAt: 1_788_301_000 }],
     }],
   }),
+  subscribeHostedDashboardReadModel: vi.fn(() => vi.fn()),
 }));
 
 describe("HostedDashboardPage", () => {

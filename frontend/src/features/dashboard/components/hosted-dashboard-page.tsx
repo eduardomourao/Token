@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
-import { getHostedDashboardReadModel } from "../hosted-dashboard-read-model";
+import { getHostedDashboardReadModel, subscribeHostedDashboardReadModel } from "../hosted-dashboard-read-model";
 
 const REFRESH_INTERVAL_MS = 60_000;
 
@@ -20,12 +21,17 @@ function resetText(resetAt: number | null): string {
 }
 
 export function HostedDashboardPage() {
+  const queryClient = useQueryClient();
   const dashboard = useQuery({
     queryKey: ["hosted-dashboard-read-model"],
     queryFn: getHostedDashboardReadModel,
     refetchInterval: REFRESH_INTERVAL_MS,
     refetchIntervalInBackground: true,
   });
+
+  useEffect(() => subscribeHostedDashboardReadModel(() => {
+    void queryClient.invalidateQueries({ queryKey: ["hosted-dashboard-read-model"] });
+  }), [queryClient]);
 
   return (
     <main className="min-h-dvh bg-background px-4 py-6 text-foreground sm:px-6">

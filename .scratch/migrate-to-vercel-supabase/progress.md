@@ -126,3 +126,9 @@
 
 - O projeto Vercel `token-usage-monitor` foi conectado ao repositório `https://github.com/eduardomourao/Token.git` pela CLI autenticada. Antes disso, o alias de produção respondia HTTP 200, mas o projeto não informava uma conexão Git e continuava apontando para o deploy anterior.
 - Uma tentativa de preview local transferiu 53,9 kB, mas a CLI não retornou URL nem estado final e exibiu um aviso sobre o subdiretório `deploy`; o preview ficou **não verificado** e não foi promovido. O próximo push é a prova deliberada da automação Git e deve ser inspecionado antes de declarar CI/CD saudável.
+- O commit `21501fb` acionou automaticamente `dpl_qRUUaHnYJ983kpMEXgi5dLPGpDWS` pela `main`; o build ficou `READY` em 35 segundos, recebeu o alias de produção, respondeu HTTP 200 e não apresentou logs de nível `error` na checagem inicial. A integração GitHub–Vercel está confirmada.
+
+## 2026-09-02 — Dashboard hospedado com Realtime
+
+- A página hospedada agora assina somente `INSERT` na tabela pública e já publicada `hosted_dashboard_usage_history`. Cada evento invalida a query de leitura proprietário; o canal é removido ao desmontar e o polling de 60 segundos continua como recuperação.
+- Validações locais: 3 testes Vitest focados com worker único, typecheck e build Vite de produção passaram. A primeira chamada padrão do Vitest não devolveu resumo neste checkout; a repetição em `--pool=threads --maxWorkers=1` é a evidência usada. A revisão Matt formal continua bloqueada pelo provedor de subagentes ausente; `code-review-graph` permanece fora por autorização do usuário.
