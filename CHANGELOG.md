@@ -1,5 +1,64 @@
 # Changelog
 
+## [1.25.0](https://github.com/eduardomourao/Token/compare/v1.24.0...v1.25.0) (2026-09-02)
+
+
+### Features
+
+* add hosted dashboard read model ([5f3d6a9](https://github.com/eduardomourao/Token/commit/5f3d6a9b0e5024a06e55544268003d9de78cb6d7))
+* add hosted Gemini usage collector ([acfa952](https://github.com/eduardomourao/Token/commit/acfa95226468b14ab5dd6814d9f516cacc711f1e))
+* add hosted health probes ([a1f5bab](https://github.com/eduardomourao/Token/commit/a1f5bab1175fcea12b4fcf5b4a0149a6dc2b4c0e))
+* add hosted opencode usage collector ([ed6bd58](https://github.com/eduardomourao/Token/commit/ed6bd5821321eec249d1eaa1ab5d25e33944334b))
+* add hosted proxy account selection ([3a65237](https://github.com/eduardomourao/Token/commit/3a65237c561ccf74fc74748d476aa95662639b09))
+* add hosted proxy api keys ([a42984a](https://github.com/eduardomourao/Token/commit/a42984ad5068964eeffc89036a028ce9d280d1cc))
+* add hosted responses proxy foundation ([6d89ef8](https://github.com/eduardomourao/Token/commit/6d89ef86460ddd4eadd2893763d09de8cdc7297f))
+* add hosted session affinity ([1399930](https://github.com/eduardomourao/Token/commit/1399930b48dec8503125359cfdb065b2446df1a4))
+* add hosted websocket probe ([68c6db6](https://github.com/eduardomourao/Token/commit/68c6db682157e5931f01df9436bfccafaabb3397))
+* add hosted websocket replay controls ([422aaa0](https://github.com/eduardomourao/Token/commit/422aaa05d25b6fe0806994ea958afa4797981a20))
+* add hosted websocket replay spool ([99bc5db](https://github.com/eduardomourao/Token/commit/99bc5dbf90cf10c6712e898345e8b50d7b2dab45))
+* add Supabase usage monitor foundation ([a54b994](https://github.com/eduardomourao/Token/commit/a54b99427ae4bf7b0f7d3bf78fa2fbc939f96397))
+* expose hosted websocket spool operations ([3624787](https://github.com/eduardomourao/Token/commit/36247878775c3ab55db1e3e3fd98fbd41b1cd061))
+* fail over hosted responses before output ([d97937c](https://github.com/eduardomourao/Token/commit/d97937ccf00ec9a5c34d3c2ba948317f95075cd9))
+* persist hosted proxy rate limits ([12e43b2](https://github.com/eduardomourao/Token/commit/12e43b2b18aa6bf8715557693bf190fa8cddc33b))
+* refresh hosted dashboard with realtime ([1c3d7fc](https://github.com/eduardomourao/Token/commit/1c3d7fc3f06565f01938cbd27d7c7ec5f4b11d42))
+* refresh hosted proxy quotas ([b1f5e2e](https://github.com/eduardomourao/Token/commit/b1f5e2eede6e539590cdd3c67b280ba3fcc83b4c))
+* relay hosted websocket probe through sse ([07e6b80](https://github.com/eduardomourao/Token/commit/07e6b809bc9de60330470138e2b4cd211015db58))
+* rotate hosted proxy oauth credentials ([496663a](https://github.com/eduardomourao/Token/commit/496663afc2bb69bc41437fa33237a4050431a851))
+* route hosted responses through edge proxy ([072c7cf](https://github.com/eduardomourao/Token/commit/072c7cf7646a03d3b9168ebe372243c79c50a607))
+* route native responses through hosted relay ([866e8dc](https://github.com/eduardomourao/Token/commit/866e8dc6d1a810e2911bd00b7f43fe592895622a))
+* route native responses websocket upgrades ([75288bc](https://github.com/eduardomourao/Token/commit/75288bcbd6bc9ae2406aee16a16175b9ad16ae0a))
+* schedule hosted websocket spool retention ([9c2cb77](https://github.com/eduardomourao/Token/commit/9c2cb77a13a6c57e3376827a021a7b868f915538))
+
+
+### Bug Fixes
+
+* canonicalize hosted relay content headers ([3f510cb](https://github.com/eduardomourao/Token/commit/3f510cbd234afd7a435f0c523a81eb109597fc81))
+* carry supabase jwt through vercel proxy ([188943c](https://github.com/eduardomourao/Token/commit/188943cffa52e4e936bbe0f5542f7323881182ee))
+* derive hosted proxy credential key ([2e713f5](https://github.com/eduardomourao/Token/commit/2e713f509f56b09d68125f9b9e935788512e0720))
+* handle native responses websocket upgrades ([fe97b9c](https://github.com/eduardomourao/Token/commit/fe97b9cc4777efea36e964247f1bb0b9138ef78f))
+* import private proxy records through rpc ([9435b3c](https://github.com/eduardomourao/Token/commit/9435b3c42b1bdd616e85b180f40bd1743825afbb))
+* load hosted health functions on vercel ([930afb8](https://github.com/eduardomourao/Token/commit/930afb8ec4cdd35bca8816e9a8a9489da7839b2f))
+* narrow hosted websocket frames ([55d868e](https://github.com/eduardomourao/Token/commit/55d868e0fe2b9e595ff1bd6d065d07bd5a00d264))
+* normalize hosted websocket response payloads ([60b0e5d](https://github.com/eduardomourao/Token/commit/60b0e5d9321f537f092508248cfb8728becb7995))
+* preserve proxy authentication through vercel ([e6c7aa8](https://github.com/eduardomourao/Token/commit/e6c7aa8cac0592150daed827bba6f80302d128e9))
+* preserve websocket non-create no-op ([1f288c3](https://github.com/eduardomourao/Token/commit/1f288c3af1279dd121462001d86a736ead3252da))
+* route websocket spool requests correctly ([4c444aa](https://github.com/eduardomourao/Token/commit/4c444aaa70691b1fe517d71ad9f2eda69efc07b5))
+
+
+### Documentation
+
+* define hosted websocket proof plan ([a2b587b](https://github.com/eduardomourao/Token/commit/a2b587b41364db4bee6ffc8f13b8cf5a4f237b5a))
+* record hosted dashboard and relay validation ([c61a7d5](https://github.com/eduardomourao/Token/commit/c61a7d5b65b265a0658ea47b1785e24624878c0b))
+* record hosted health verification ([2c232ab](https://github.com/eduardomourao/Token/commit/2c232ab139add673ac22c875182ecddb07c6b307))
+* record hosted production verification ([7b42bb9](https://github.com/eduardomourao/Token/commit/7b42bb9aee997d8c3c86b484e66ffef8beee4b96))
+* record hosted proxy verification ([060df93](https://github.com/eduardomourao/Token/commit/060df937c3279c86f50e2e9a95f29db6be35b40f))
+* record native websocket compatibility scope ([146489d](https://github.com/eduardomourao/Token/commit/146489d6d35a3f5507876f769cda124f1836c640))
+* record production migration state ([4e0ac01](https://github.com/eduardomourao/Token/commit/4e0ac01afa988e41f2a4375a035bb41c68af9293))
+* record vercel git integration ([21501fb](https://github.com/eduardomourao/Token/commit/21501fb083da09203c8058a73de5a41935e81ba5))
+* record websocket compatibility boundary ([af479ca](https://github.com/eduardomourao/Token/commit/af479cae1bacbbf10dc8e19376f22137160263e6))
+* record websocket probe evidence ([d07b0a6](https://github.com/eduardomourao/Token/commit/d07b0a61836ffb16086d61b3fd7bb868e9901d73))
+* verify native responses aliases ([df5f5e1](https://github.com/eduardomourao/Token/commit/df5f5e1450587bba793a619ea4ad0349be4e45ff))
+
 ## [1.24.0](https://github.com/Soju06/codex-lb/compare/v1.23.0...v1.24.0) (2026-08-26)
 
 
