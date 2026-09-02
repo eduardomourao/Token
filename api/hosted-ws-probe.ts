@@ -40,6 +40,21 @@ export function buildHostedWebSocketSpoolHeaders(headers: Headers, action: "crea
   };
 }
 
+export function classifyHostedRelayFailure(detail: unknown): "input_must_be_list" | "store_must_be_false" | "upstream_rejected" {
+  if (detail === "Input must be a list") return "input_must_be_list";
+  if (detail === "Store must be set to false") return "store_must_be_false";
+  return "upstream_rejected";
+}
+
+async function hostedRelayFailure(response: Response): Promise<ReturnType<typeof classifyHostedRelayFailure>> {
+  try {
+    const payload = JSON.parse(await response.text()) as { detail?: unknown };
+    return classifyHostedRelayFailure(payload.detail);
+  } catch {
+    return "upstream_rejected";
+  }
+}
+
 function requestHeaders(headers: Record<string, HeaderValue>): Headers {
   const normalized = new Headers();
   for (const [name, value] of Object.entries(headers)) {
@@ -138,7 +153,7 @@ export default async function handler(request: NodeRequest, response: NodeRespon
           stage = "relay";
           const upstream = await fetch(EDGE_FUNCTION_URL, { method: "POST", headers: relayHeaders(headers), body: JSON.stringify(parsed.payload) });
           if (!upstream.ok || !upstream.body) {
-            console.error("hosted_ws_probe_failed", { stage, status: upstream.status });
+            console.error("hosted_ws_probe_failed", { stage, status: upstream.status, reason: await hostedRelayFailure(upstream) });
             throw new Error("relay failed");
           }
           const decoder = new HostedResponsesSseDecoder();

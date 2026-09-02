@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import {
   buildHostedWebSocketSpoolHeaders,
   buildHostedWebSocketPreflightHeaders,
+  classifyHostedRelayFailure,
   isHostedWebSocketUpgrade,
 } from "../../api/hosted-ws-probe.ts";
 
@@ -36,4 +37,10 @@ test("spool operations authenticate without accidentally becoming an auth prefli
     "content-type": "application/json",
     "x-codex-websocket-spool-action": "create",
   });
+});
+
+test("relay diagnostics expose only allowlisted contract failures", () => {
+  expect(classifyHostedRelayFailure("Input must be a list")).toBe("input_must_be_list");
+  expect(classifyHostedRelayFailure("Store must be set to false")).toBe("store_must_be_false");
+  expect(classifyHostedRelayFailure("untrusted upstream body")).toBe("upstream_rejected");
 });
