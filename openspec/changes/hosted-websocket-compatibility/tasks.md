@@ -39,12 +39,17 @@
 
 ## 4. Cutover
 
-- [ ] 4.1 Compare the remote compatibility suite against legacy behavior and
-      document every unsupported client frame.
-- [ ] 4.2 Only after all required compatibility scenarios pass, map the
-      native WebSocket paths to the hosted gateway with a reversible release.
+- [x] 4.1 Compare the remote compatibility suite against legacy behavior and
+      document every unsupported client frame. (The staged compatibility map
+      records the deliberately unsupported capability, turn-state,
+      multiplexing and automatic-recovery contracts.)
+- [ ] 4.2 Complete the full native cutover only after the advanced legacy
+      continuity and capability scenarios pass. The native paths currently
+      expose only the proven, reversible hosted subset.
 
 ## 5. Verification
 
-- [ ] 5.1 Run focused boundary tests, TypeScript checks, production build,
-      strict OpenSpec validation and deployed upgrade evidence.
+- [x] 5.1 Run focused boundary tests, TypeScript checks, production build,
+      strict OpenSpec validation and deployed upgrade evidence. (The Vercel
+      production build and both native authenticated upgrade paths were
+      verified; temporary API keys were removed after each probe.)

@@ -3,7 +3,8 @@
 **What to decide and build:** preservar clientes WebSocket do proxy legado sem
 declarar o protocolo Supabase Realtime equivalente ao protocolo OpenAI.
 
-**Status:** implementation — create, cancel and replay proven; native rollout pending
+**Status:** staged native rollout — create, cancel and replay persistence
+proven; advanced legacy continuity remains intentionally incomplete
 
 - [x] Inventariar o runtime legado: WebSocket envolve sessão persistente,
   replay/resume, recuperação, quota, afinidade e controle de concorrência.
@@ -83,3 +84,29 @@ deve depender de memória da Function nem do Runtime Cache da Vercel.
 - Uma reconexão autenticada usando o mesmo spool com `after_cursor = 1`
   reemitiu oito eventos, começando em `response.in_progress`; o primeiro
   evento já visível não foi duplicado e a conexão fechou normalmente.
+
+### Corte nativo parcial e mapa de compatibilidade — 2026-09-02
+
+- Os caminhos nativos `wss://…/v1/responses` e
+  `wss://…/backend-api/codex/responses` agora entram no mesmo gateway. Sem
+  credencial, ambos recusam antes do upgrade com `401`. Com uma API key
+  temporária, os dois aceitaram `response.create` seguido de
+  `response.cancel` após 300 ms e emitiram `response.incomplete`; as chaves
+  foram removidas após cada prova.
+- O fluxo normal nativo em `/v1/responses` também foi concluído e produziu os
+  nove tipos esperados, de `response.created` a `response.completed`, sem
+  registrar conteúdo no relatório.
+- **Subconjunto suportado:** quadro textual até 256 KiB do tipo
+  `response.create`, com `model` não vazio, `input` string ou lista e
+  `stream` ausente/verdadeiro; o gateway impõe `stream: true` e `store: false`.
+  Ele aceita um cancelamento da única solicitação ativa e um replay
+  owner-scoped por cursor do spool. Frames binários e create malformado são
+  recusados; outros frames não-create são no-op, como no caminho legado.
+- **Ainda não equivalente ao legado:** headers de capability e sua rota de
+  autorização; síntese/aceitação de `x-codex-turn-state`; continuidade por
+  `response_id`, watermark de sequência e recuperação automática após queda;
+  multiplexação de creates simultâneos e reuso do WebSocket upstream; e
+  encaminhamento de rotas/modelos fonte dependentes de capability. O replay do
+  spool é uma extensão explícita do gateway, não substitui a retomada nativa
+  automática desses clientes. Por isso este corte é reversível e não é uma
+  declaração de paridade completa.
