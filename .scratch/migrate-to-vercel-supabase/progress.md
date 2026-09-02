@@ -145,3 +145,8 @@
 ## 2026-09-02 — descoberta de WebSocket/replay
 
 - O inventário do runtime legado e a documentação oficial confirmam que WebSocket/replay não podem ser rebatizados como Supabase Realtime: o serviço Supabase fala Phoenix, enquanto clientes atuais usam o protocolo OpenAI; a Vercel não garante que conexões posteriores compartilhem a mesma Function. O ticket 16 documenta a prova de gateway exigida. HTTP/SSE continua o contrato hospedado de inferência comprovado.
+
+## 2026-09-02 — probes de saúde hospedados
+
+- Produção retornava HTTP 404 em `/health` porque a rota era excluída do fallback SPA, mas ainda não tinha Function. Foram adicionados `/health`, `/health/live`, `/health/ready` e `/health/startup`, com o payload legado em `/health` e identificação explícita de runtime Vercel/HTTP-SSE nos demais.
+- Sete testes Bun de borda passaram, assim como typecheck e build Vite. A validação remota dos quatro caminhos ocorre após o deploy automático da Vercel.

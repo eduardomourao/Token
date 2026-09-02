@@ -7,6 +7,22 @@
   "outputDirectory": "app/static",
   "rewrites": [
     {
+      "source": "/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/health/live",
+      "destination": "/api/health/live"
+    },
+    {
+      "source": "/health/ready",
+      "destination": "/api/health/ready"
+    },
+    {
+      "source": "/health/startup",
+      "destination": "/api/health/startup"
+    },
+    {
       "source": "/v1/responses",
       "destination": "/api/v1/responses"
     },
