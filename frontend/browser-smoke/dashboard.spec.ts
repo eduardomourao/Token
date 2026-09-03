@@ -24,12 +24,18 @@ const REQUIRED_API_PATHS = [
 ] as const;
 
 const DASHBOARD_SMOKE_PASSWORD = "browser-smoke-password";
+const BROWSER_SMOKE_BASE_URL = process.env.CODEX_LB_BROWSER_SMOKE_BASE_URL;
+
+if (!BROWSER_SMOKE_BASE_URL) {
+  throw new Error("CODEX_LB_BROWSER_SMOKE_BASE_URL is required for dashboard browser smoke tests.");
+}
 
 async function authenticateSmokePage(page: Page): Promise<void> {
-  const sessionResponse = await page.context().request.get("/api/dashboard-auth/session");
+  const sessionUrl = new URL("/api/dashboard-auth/session", BROWSER_SMOKE_BASE_URL).toString();
+  const sessionResponse = await page.context().request.get(sessionUrl);
   const session = AuthSessionSchema.parse(await sessionResponse.json());
   const endpoint = session.passwordRequired ? "/api/dashboard-auth/password/login" : "/api/dashboard-auth/password/setup";
-  const response = await page.context().request.post(endpoint, {
+  const response = await page.context().request.post(new URL(endpoint, BROWSER_SMOKE_BASE_URL).toString(), {
     data: { password: DASHBOARD_SMOKE_PASSWORD },
   });
 

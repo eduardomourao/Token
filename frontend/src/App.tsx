@@ -114,16 +114,14 @@ export default function App() {
           <UsageMonitorAccessGate><Suspense fallback={null}><UsageMonitorPage /></Suspense></UsageMonitorAccessGate>
         )} />
         <Route element={<AuthGate><AppLayout /></AuthGate>}>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/automations" element={<AutomationsPage />} />
-            <Route path="/apis" element={<ApisPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/firewall" element={<Navigate to="/settings?advanced=1#firewall" replace />} />
-          </Route>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/automations" element={<AutomationsPage />} />
+          <Route path="/apis" element={<ApisPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/firewall" element={<Navigate to="/settings?advanced=1#firewall" replace />} />
         </Route>
       </Routes>
     </TooltipProvider>
