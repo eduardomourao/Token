@@ -54,9 +54,7 @@ def upgrade() -> None:
             sa.PrimaryKeyConstraint("id"),
         )
     _create_index_if_missing("ix_gemini_usage_sample_captured_at", "gemini_usage_sample", ["captured_at"])
-    _create_index_if_missing(
-        "ix_gemini_usage_sample_window_captured", "gemini_usage_sample", ["window", "captured_at"]
-    )
+    _create_index_if_missing("ix_gemini_usage_sample_window_captured", "gemini_usage_sample", ["window", "captured_at"])
     _monitor("antigravity_usage_monitor")
     if not sa.inspect(op.get_bind()).has_table("antigravity_usage_sample"):
         op.create_table(
