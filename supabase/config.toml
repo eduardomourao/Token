@@ -33,7 +33,9 @@ enroll_enabled = true
 verify_enabled = true
 
 [auth.email]
-enable_confirmations = true
+# Personal dashboard: creation with e-mail/password starts a session immediately.
+# The hosted project is updated from this source configuration via `supabase config push`.
+enable_confirmations = false
 max_frequency = "1m0s"
 otp_length = 8
 

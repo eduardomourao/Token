@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getSupabaseUsageMonitorClient, isSupabaseUsageMonitorEnabled } from "@/features/gemini-usage/supabase-usage-monitor";
 
-type AccessStatus = "idle" | "loading" | "recovery-sent" | "error";
-type AccessView = "login" | "recovery" | "update-password";
+type AccessStatus = "idle" | "loading" | "error";
+type AccessView = "login" | "sign-up";
 
 function AccessCard({ children }: PropsWithChildren) {
   return <main className="flex min-h-dvh items-center justify-center bg-[#09090b] p-4 text-zinc-100">
@@ -30,9 +30,8 @@ function SupabaseUsageMonitorAccessGate({ children }: PropsWithChildren) {
       setSession(data.session);
       setStatus(error ? "error" : "idle");
     });
-    const { data: subscription } = client.auth.onAuthStateChange((event, nextSession) => {
+    const { data: subscription } = client.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (event === "PASSWORD_RECOVERY" && nextSession) setView("update-password");
     });
     return () => {
       mounted = false;
@@ -56,50 +55,33 @@ function SupabaseUsageMonitorAccessGate({ children }: PropsWithChildren) {
     setStatus("idle");
   };
 
-  const requestPasswordReset = async (event: FormEvent<HTMLFormElement>) => {
+  const signUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus("loading");
-    const { error } = await getSupabaseUsageMonitorClient().auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/usage-monitor`,
+    const { data, error } = await getSupabaseUsageMonitorClient().auth.signUp({
+      email: email.trim(),
+      password,
     });
-    setStatus(error ? "error" : "recovery-sent");
-  };
-
-  const updatePassword = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setStatus("loading");
-    const { error } = await getSupabaseUsageMonitorClient().auth.updateUser({ password });
-    if (error) {
+    if (error || !data.session) {
       setStatus("error");
       return;
     }
     setPassword("");
-    setView("login");
+    setSession(data.session);
     setStatus("idle");
   };
 
-  if (session && view !== "update-password") return <>{children}</>;
+  if (session) return <>{children}</>;
 
-  if (view === "update-password") {
+  if (view === "sign-up") {
     return <AccessCard>
-      <form className="space-y-4" onSubmit={(event) => void updatePassword(event)}>
-        <div><h1 className="text-lg font-semibold tracking-tight">Defina sua senha</h1><p className="mt-1 text-sm text-zinc-400">Use esta senha nos próximos acessos ao painel.</p></div>
-        <Input aria-label="Nova senha" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} disabled={status === "loading"} />
-        <Button className="w-full" type="submit" disabled={status === "loading"}>{status === "loading" ? "Salvando…" : "Salvar senha"}</Button>
-        {status === "error" ? <p role="alert" className="text-sm text-destructive">Não foi possível salvar a senha. Tente novamente.</p> : null}
-      </form>
-    </AccessCard>;
-  }
-
-  if (view === "recovery") {
-    return <AccessCard>
-      <form className="space-y-4" onSubmit={(event) => void requestPasswordReset(event)}>
-        <div><h1 className="text-lg font-semibold tracking-tight">Recuperar acesso</h1><p className="mt-1 text-sm text-zinc-400">Enviaremos um link para você definir uma senha.</p></div>
+      <form className="space-y-4" onSubmit={(event) => void signUp(event)}>
+        <div><h1 className="text-lg font-semibold tracking-tight">Criar conta</h1><p className="mt-1 text-sm text-zinc-400">Cadastre seu e-mail e senha para acessar o painel imediatamente.</p></div>
         <Input aria-label="E-mail" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} disabled={status === "loading"} />
-        <Button className="w-full" type="submit" disabled={status === "loading"}>{status === "loading" ? "Enviando…" : "Enviar link para definir senha"}</Button>
-        <Button className="w-full" type="button" variant="ghost" onClick={() => { setStatus("idle"); setView("login"); }}>Voltar ao login</Button>
-        {status === "recovery-sent" ? <p className="text-sm text-emerald-400">Verifique seu e-mail e defina uma senha neste dispositivo.</p> : null}
-        {status === "error" ? <p role="alert" className="text-sm text-destructive">Não foi possível enviar o link. Tente novamente.</p> : null}
+        <Input aria-label="Senha" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(event) => setPassword(event.target.value)} disabled={status === "loading"} />
+        <Button className="w-full" type="submit" disabled={status === "loading"}>{status === "loading" ? "Criando…" : "Criar conta"}</Button>
+        <Button className="w-full" type="button" variant="ghost" onClick={() => { setPassword(""); setStatus("idle"); setView("login"); }}>Já tenho uma conta</Button>
+        {status === "error" ? <p role="alert" className="text-sm text-destructive">Não foi possível criar esta conta. Tente outro e-mail ou entre com a senha existente.</p> : null}
       </form>
     </AccessCard>;
   }
@@ -110,7 +92,7 @@ function SupabaseUsageMonitorAccessGate({ children }: PropsWithChildren) {
       <Input aria-label="E-mail" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} disabled={status === "loading"} />
       <Input aria-label="Senha" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} disabled={status === "loading"} />
       <Button className="w-full" type="submit" disabled={status === "loading"}>{status === "loading" ? "Entrando…" : "Entrar"}</Button>
-      <Button className="w-full" type="button" variant="ghost" onClick={() => { setStatus("idle"); setView("recovery"); }}>Definir ou recuperar senha</Button>
+      <Button className="w-full" type="button" variant="ghost" onClick={() => { setPassword(""); setStatus("idle"); setView("sign-up"); }}>Criar conta</Button>
       {status === "error" ? <p role="alert" className="text-sm text-destructive">E-mail ou senha inválidos. Tente novamente.</p> : null}
     </form>
   </AccessCard>;

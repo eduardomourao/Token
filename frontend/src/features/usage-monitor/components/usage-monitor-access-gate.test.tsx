@@ -10,8 +10,7 @@ const supabaseAuth = vi.hoisted(() => ({
   getSession: vi.fn(),
   onAuthStateChange: vi.fn(),
   signInWithPassword: vi.fn(),
-  resetPasswordForEmail: vi.fn(),
-  updateUser: vi.fn(),
+  signUp: vi.fn(),
 }));
 
 vi.mock("@/features/gemini-usage/supabase-usage-monitor", () => ({
@@ -53,19 +52,24 @@ describe("UsageMonitorAccessGate", () => {
     expect(await screen.findByText("Hosted dashboard")).toBeInTheDocument();
   });
 
-  it("sends a password-recovery link instead of a magic login link", async () => {
+  it("creates an immediately authenticated account with email and password", async () => {
     const user = userEvent.setup();
-    supabaseAuth.resetPasswordForEmail.mockResolvedValue({ error: null });
+    const testPassword = "new-password";
+    supabaseAuth.signUp.mockResolvedValue({
+      data: { session: { access_token: "new-account-token" } },
+      error: null,
+    });
     renderGate();
 
-    await user.click(screen.getByRole("button", { name: "Definir ou recuperar senha" }));
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
     await user.type(screen.getByRole("textbox", { name: "E-mail" }), "owner@example.com");
-    await user.click(screen.getByRole("button", { name: "Enviar link para definir senha" }));
+    await user.type(screen.getByLabelText("Senha"), testPassword);
+    await user.click(screen.getByRole("button", { name: "Criar conta" }));
 
-    await waitFor(() => expect(supabaseAuth.resetPasswordForEmail).toHaveBeenCalledWith(
-      "owner@example.com",
-      expect.objectContaining({ redirectTo: expect.stringMatching(/\/usage-monitor$/) }),
-    ));
-    expect(await screen.findByText(/Verifique seu e-mail/)).toBeInTheDocument();
+    await waitFor(() => expect(supabaseAuth.signUp).toHaveBeenCalledWith({
+      email: "owner@example.com",
+      password: testPassword,
+    }));
+    expect(await screen.findByText("Hosted dashboard")).toBeInTheDocument();
   });
 });
