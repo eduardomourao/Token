@@ -17,35 +17,45 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "opencode_go_usage_monitor",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("api_key_encrypted", sa.LargeBinary(), nullable=False),
-        sa.Column("last_attempt_at", sa.DateTime(), nullable=True),
-        sa.Column("last_success_at", sa.DateTime(), nullable=True),
-        sa.Column("last_error", sa.String(length=64), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_table(
-        "opencode_go_usage_samples",
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
-        sa.Column("window", sa.String(length=16), nullable=False),
-        sa.Column("remaining_percent", sa.Float(), nullable=False),
-        sa.Column("resets_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("captured_at", sa.DateTime(), nullable=False),
-        sa.CheckConstraint("\"window\" IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
-        sa.CheckConstraint(
-            "remaining_percent >= 0 AND remaining_percent <= 100",
-            name="ck_opencode_go_usage_remaining_percent",
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index("ix_opencode_go_usage_samples_captured_at", "opencode_go_usage_samples", ["captured_at"])
-    op.create_index(
-        "ix_opencode_go_usage_samples_window_captured",
-        "opencode_go_usage_samples",
-        ["window", "captured_at"],
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if not inspector.has_table("opencode_go_usage_monitor"):
+        op.create_table(
+            "opencode_go_usage_monitor",
+            sa.Column("id", sa.Integer(), nullable=False),
+            sa.Column("api_key_encrypted", sa.LargeBinary(), nullable=False),
+            sa.Column("last_attempt_at", sa.DateTime(), nullable=True),
+            sa.Column("last_success_at", sa.DateTime(), nullable=True),
+            sa.Column("last_error", sa.String(length=64), nullable=True),
+            sa.PrimaryKeyConstraint("id"),
+        )
+
+    if not inspector.has_table("opencode_go_usage_samples"):
+        op.create_table(
+            "opencode_go_usage_samples",
+            sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+            sa.Column("window", sa.String(length=16), nullable=False),
+            sa.Column("remaining_percent", sa.Float(), nullable=False),
+            sa.Column("resets_at", sa.DateTime(timezone=True), nullable=False),
+            sa.Column("captured_at", sa.DateTime(), nullable=False),
+            sa.CheckConstraint("\"window\" IN ('rolling', 'weekly', 'monthly')", name="ck_opencode_go_usage_window"),
+            sa.CheckConstraint(
+                "remaining_percent >= 0 AND remaining_percent <= 100",
+                name="ck_opencode_go_usage_remaining_percent",
+            ),
+            sa.PrimaryKeyConstraint("id"),
+        )
+
+    existing_indexes = {index["name"] for index in sa.inspect(bind).get_indexes("opencode_go_usage_samples")}
+    if "ix_opencode_go_usage_samples_captured_at" not in existing_indexes:
+        op.create_index("ix_opencode_go_usage_samples_captured_at", "opencode_go_usage_samples", ["captured_at"])
+    if "ix_opencode_go_usage_samples_window_captured" not in existing_indexes:
+        op.create_index(
+            "ix_opencode_go_usage_samples_window_captured",
+            "opencode_go_usage_samples",
+            ["window", "captured_at"],
+        )
 
 
 def downgrade() -> None:
