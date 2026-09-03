@@ -268,7 +268,8 @@ async def test_run_startup_migrations_handles_legacy_schema_table_and_legacy_ale
     (not _is_postgresql_database_url(_DATABASE_URL)) or check_migration_policy is None,
     reason="PostgreSQL-only migration contract test",
 )
-async def test_postgresql_migration_contract_policy_and_drift_match(db_setup):
+async def test_postgresql_migration_contract_policy_and_drift_match(postgresql_schema_at_head):
+    del postgresql_schema_at_head
     result = await run_startup_migrations(_DATABASE_URL)
     assert result.current_revision == _HEAD_REVISION
 
@@ -302,7 +303,8 @@ async def test_postgresql_upgrade_head_from_empty_database(db_setup):
     (not _is_postgresql_database_url(_DATABASE_URL)) or (not _HAS_REVISION_REMAP),
     reason="PostgreSQL-only migration remap test",
 )
-async def test_postgresql_startup_migration_auto_remap_legacy_head(db_setup):
+async def test_postgresql_startup_migration_auto_remap_legacy_head(postgresql_schema_at_head):
+    del postgresql_schema_at_head
     await run_startup_migrations(_DATABASE_URL)
 
     async with SessionLocal() as session:
@@ -1243,7 +1245,7 @@ async def test_usage_history_bulk_covering_indexes_migration_upgrade_and_downgra
     not _is_postgresql_database_url(_DATABASE_URL),
     reason="PostgreSQL-only invalid covering-index repair test",
 )
-async def test_usage_history_covering_index_migration_repairs_invalid_leftover_postgresql(db_setup):
+async def test_usage_history_covering_index_migration_repairs_invalid_leftover_postgresql(postgresql_schema_at_head):
     """An invalid leftover from an interrupted CREATE INDEX CONCURRENTLY is rebuilt.
 
     ``IF NOT EXISTS`` alone would silently accept an invalid same-named index,
@@ -1256,6 +1258,8 @@ async def test_usage_history_covering_index_migration_repairs_invalid_leftover_p
     from alembic import command
 
     from app.db.migrate import _build_alembic_config
+
+    del postgresql_schema_at_head
 
     parent_revision = "20260730_000000_add_api_key_fair_share_threshold"
     index_name = "idx_usage_window_account_time_covering"
@@ -1300,7 +1304,9 @@ async def test_usage_history_covering_index_migration_repairs_invalid_leftover_p
     not _is_postgresql_database_url(_DATABASE_URL),
     reason="PostgreSQL-only autovacuum reloptions test",
 )
-async def test_usage_history_autovacuum_tuning_migration_sets_and_resets_reloptions_postgresql(db_setup):
+async def test_usage_history_autovacuum_tuning_migration_sets_and_resets_reloptions_postgresql(
+    postgresql_schema_at_head,
+):
     """The autovacuum tuning revision round-trips and tolerates manual pre-application.
 
     ``usage_history`` is append-heavy, so a stale visibility map silently
@@ -1313,6 +1319,8 @@ async def test_usage_history_autovacuum_tuning_migration_sets_and_resets_relopti
     from alembic import command
 
     from app.db.migrate import _build_alembic_config
+
+    del postgresql_schema_at_head
 
     parent_revision = "20260806_020000_add_usage_history_bulk_covering_indexes"
     expected_options = {

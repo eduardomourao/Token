@@ -218,6 +218,29 @@ async def db_setup(_reset_db_state):
 
 
 @pytest_asyncio.fixture
+async def postgresql_schema_at_head(_reset_db_state):
+    """Provide an empty PostgreSQL schema upgraded by Alembic, not ORM metadata.
+
+    Most tests need the fast metadata-created schema from ``_reset_db_state``.
+    Migration tests instead must begin with no application tables: otherwise a
+    recently added model table can exist before its corresponding Alembic
+    revision is applied, masking migration behavior or causing DuplicateTable.
+    """
+    del _reset_db_state
+    if engine.dialect.name != "postgresql":
+        pytest.skip("requires PostgreSQL")
+
+    async with engine.begin() as conn:
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+
+    from app.db.migrate import run_startup_migrations
+
+    await run_startup_migrations(os.environ["CODEX_LB_DATABASE_URL"])
+    return True
+
+
+@pytest_asyncio.fixture
 async def async_client(app_instance):
     async def _drain_proxy_persistence(response) -> None:
         # Request-log writes and API-key settlements are detached from the
